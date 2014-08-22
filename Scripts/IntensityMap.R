@@ -1,6 +1,7 @@
+## @knitr loadEverything
+
 library(gstat)
 library(ggplot2)
-
 library(raster)
 library(lattice)
 library(rgdal)
@@ -14,26 +15,33 @@ krugerOutline <- readOGR(dsn="/Users/danielg7/Documents/LandsatImagery/Boundary/
 krugerAvgTmin_UTM <- raster(x="/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Ignition Variation/SpatialDriversofTopKill/Data/krugerAvgTmin_UTM")
 krugerMAP_UTM <- raster(x="/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Ignition Variation/SpatialDriversofTopKill/Data/krugerMAP_UTM")
 krugerFirelineIntensity_UTM <- raster(x="/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Ignition Variation/SpatialDriversofTopKill/Data/krugerFireLineIntensity_UTM")
+krugerGly <- readOGR(dsn="Data/",layer="KNP_GraniticAndBasaltic")
+
+krugerWoodyCover <- raster(x="Data/WoodyCover/wcp_map_fin.tif")
 
 krugerMAP_UTM <- resample(krugerMAP_UTM,krugerAvgTmin_UTM)
 krugerFirelineIntensity_UTM <- resample(krugerFirelineIntensity_UTM,krugerAvgTmin_UTM)
+krugerWoodyCover_UTM <- projectRaster(krugerWoodyCover,krugerAvgTmin_UTM)
+
+rm(krugerWoodyCover)
+
 names(krugerMAP_UTM) <- "MAP"
 names(krugerFirelineIntensity_UTM) <- "Fireline_Intensity"
+names(krugerWoodyCover_UTM) <- "WoodyCover"
 
 FIRMS <- spTransform(FIRMS,crs.k)
 krugerOutline <- spTransform(krugerOutline,crs.k)
+krugerGly_UTM <- spTransform(krugerGly,crs.k)
 
+## @knitr SubsetAndExtract
 FIRMS_highConfidence <- subset(FIRMS,CONFIDENCE >= 95)
-
-#FIRMS_Kruger_inter <- over(FIRMS_highConfidence,krugerOutline)
-#FIRMS_Kruger <- subset(FIRMS_highConfidence,!is.na(FIRMS_Kruger_inter[,1]))
 
 FIRMS_highConfidence$ACQ_DATE <- ymd(as.character(FIRMS_highConfidence$ACQ_DATE))
 FIRMS_highConfidence$Month <- month(FIRMS_highConfidence$ACQ_DATE)
 FIRMS_Kruger_DrySeason <- subset(FIRMS_highConfidence,Month >= 7 & Month < 10)
 FIRMS_Kruger_WetSeason <- subset(FIRMS_highConfidence,Month < 7 | Month > 10)
 
-krugerBrick <- brick(krugerMAP_UTM,krugerAvgTmin_UTM,krugerFirelineIntensity_UTM)
+krugerBrick <- brick(krugerMAP_UTM,krugerAvgTmin_UTM,krugerFirelineIntensity_UTM,krugerWoodyCover_UTM)
 
 DrySeasonMAP <- extract(krugerBrick,FIRMS_Kruger_DrySeason,method='bilinear',df=TRUE,sp=TRUE)
 WetSeasonMAP <- extract(krugerBrick,FIRMS_Kruger_WetSeason,method='bilinear',df=TRUE,sp=TRUE)
@@ -46,36 +54,4 @@ WetSeasonMAP$Season <- "Wet"
 
 FRP_Variables <- rbind(DrySeasonMAP,WetSeasonMAP)
 
-head(FRP_Variables)
-
-FRP_Variables$FRP_kwm <- FRP_Variables$FRP / 1000
-
-FRP_Variables$ConvertedIntensity <- predict(Intensity_LM,list(ReactionIntensity=FRP_Variables$FRP))
-xyplot(FRP ~ MAP | Season,FRP_Variables)
-
-bwplot(FRP ~ Season,FRP_Variables)
-
-kruskal.test(formula=FRP~Season,FRP_Variables)
-summary(subset(FRP_Variables,Season == "Dry")$FRP)
-summary(subset(FRP_Variables,Season == "Wet")$FRP)
-
-fireSeasonMap <- ggplot(data=FRP_Variables,aes(x=MAP,y=FRP,color=Season))
-fireSeasonMap+
-  myTheme+
-  ylab("Fire Radiative Power (MW / km^2)")+
-  xlab("Mean Annual Precipitation (mm / yr)")+
-  scale_color_colorblind()+
-  geom_point(alpha=.75)
-
-FRP_Cut <- FRP_Variables
-FRP_Cut$MAPRange <- cut(FRP_Variables$MAP,breaks=seq(0,1000,by=50),ordered_result=TRUE)
-FRP_Cut <- na.omit(FRP_Cut)
-
-fireSeasonMapCut <- ggplot(data=FRP_Cut,aes(x=MAPRange,y=FRP,fill=Season,factor=Season))
-fireSeasonMapCut+
-  myTheme+
-  ylab("Fire Radiative Power (MW / km^2)")+
-  xlab("Mean Annual Precipitation (mm / yr)")+
-  scale_x_discrete(labels=c("400 - 450","450 - 500","500 - 550","550 - 600","600 - 650","650 - 700","700 - 750","750 - 800","800 - 850","850 - 900"))+
-  scale_color_colorblind()+
-  geom_boxplot(position="dodge")
+FRP_Variables_subsetWC <- subset(FRP_Variables,WoodyCover >= 50)

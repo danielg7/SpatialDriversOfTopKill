@@ -1,7 +1,52 @@
-Title
+Spatial Drivers of Fire Intensity
 ========================================================
 
-```{r fig.width=7, fig.height=6}
+```{r SetUp, echo=FALSE,warning=FALSE,message=FALSE}
+library(ggthemes)
+library(ggplot2)
+library(extrafont)
 
+setwd("/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Ignition Variation/SpatialDriversofTopKill")
+
+
+
+myTheme <- theme_tufte() +
+  theme(
+    text = element_text(family="sans",size=18),
+    axis.line = element_line(size = .3)
+  )
 ```
 
+```{r ReadChunks,echo=FALSE, warning=FALSE,message=FALSE}
+read_chunk('Scripts/IntensityMap.R')
+```
+
+```{r loadEverything_chunk, echo=FALSE,warning=FALSE,message=FALSE,include=FALSE}
+<<loadEverything>>
+```
+
+```{r SubsetAndExtract_chunk,echo=TRUE,warning=FALSE,message=FALSE}
+<<SubsetAndExtract>>
+```
+
+
+```{r fireSeasonMAP,echo=FALSE,warning=FALSE}
+fireSeasonMap <- ggplot(data=FRP_Variables,aes(x=MAP,y=FRP,color=Season))
+fireSeasonMap+
+  myTheme+
+  ylab(expression(paste("Fire Radiative Power (MW ","km",{}^{-2},")")))+
+  xlab(expression(paste("Mean Annual Precipitation (mm ","yr",{}^{-1},")")))+
+  scale_color_colorblind()+
+  geom_point(alpha=.75)
+```
+
+```{r fireSeasonBucini,echo=FALSE,warning=FALSE}
+fireSeasonWC <- ggplot(data=FRP_Variables,aes(x=WoodyCover,y=FRP,color=Season))
+fireSeasonWC+
+  myTheme+
+  ylab(expression(paste("Fire Radiative Power (MW ","km",{}^{-2},")")))+
+  xlab("Woody Cover (%)")+
+  xlim(0,100)+
+  scale_color_colorblind()+
+  geom_point(alpha=.75)
+```
