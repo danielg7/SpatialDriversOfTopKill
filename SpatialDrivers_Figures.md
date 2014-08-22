@@ -1,6 +1,6 @@
 # Spatial Drivers of Fire Intensity
 
-We don't know much about drives fire intensity across different scales. To address this, fire radiative power data were obtained from [FIRMS](https://earthdata.nasa.gov/data/near-real-time-data/firms) for the period 1 Jan 2004 to 1 Jan 2014.
+We don't know much what about drives fire intensity across different scales. To address this, fire radiative power data were obtained from [FIRMS](https://earthdata.nasa.gov/data/near-real-time-data/firms) for the period 1 Jan 2004 to 1 Jan 2014.
 
 Data were subset to only include fire detections of > 95% confidence.
 
