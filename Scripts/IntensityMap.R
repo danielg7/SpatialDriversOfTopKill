@@ -64,8 +64,8 @@ WetSeasonMAP$Season <- "Wet"
 FRP_Variables <- rbind(DrySeasonMAP,WetSeasonMAP)
 names(FRP_Variables)[18] <- "Geology"
 FRP_Variables$Geology <- as.factor(FRP_Variables$Geology)
-levels(FRP_Variables$Geology)[1] <- "Granitic"
-levels(FRP_Variables$Geology)[9] <- "Basaltic"
+levels(FRP_Variables$Geology)[1] <- "Basaltic"
+levels(FRP_Variables$Geology)[9] <- "Granitic"
 levels(FRP_Variables$Geology)[c(2,3,4,5,6,7,8)] <- "Other"
 
 FRP_Variables_subsetWC <- subset(FRP_Variables,WoodyCover >= 50)
