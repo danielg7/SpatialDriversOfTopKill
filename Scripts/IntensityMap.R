@@ -1,6 +1,5 @@
 ## @knitr loadEverything
 
-library(gstat)
 library(ggplot2)
 library(raster)
 library(lattice)
@@ -20,8 +19,12 @@ krugerGly <- readOGR(dsn="Data/",layer="KNP_GraniticAndBasaltic")
 krugerWoodyCover <- raster(x="Data/WoodyCover/wcp_map_fin.tif")
 
 krugerMAP_UTM <- resample(krugerMAP_UTM,krugerAvgTmin_UTM)
+krugerGly_UTM <- spTransform(krugerGly,crs.k)
 krugerFirelineIntensity_UTM <- resample(krugerFirelineIntensity_UTM,krugerAvgTmin_UTM)
 krugerWoodyCover_UTM <- projectRaster(krugerWoodyCover,krugerAvgTmin_UTM)
+krugerOverlayRaster <- raster(krugerWoodyCover_UTM)
+
+krugerOverlayRaster <- rasterize(krugerGly_UTM,krugerOverlayRaster)
 
 rm(krugerWoodyCover)
 
@@ -33,15 +36,21 @@ FIRMS <- spTransform(FIRMS,crs.k)
 krugerOutline <- spTransform(krugerOutline,crs.k)
 krugerGly_UTM <- spTransform(krugerGly,crs.k)
 
+
+
 ## @knitr SubsetAndExtract
+
+# Subset fire detections to just those of 95% confidence or more.
 FIRMS_highConfidence <- subset(FIRMS,CONFIDENCE >= 95)
 
+# Divide dates into wet and dry season.
 FIRMS_highConfidence$ACQ_DATE <- ymd(as.character(FIRMS_highConfidence$ACQ_DATE))
 FIRMS_highConfidence$Month <- month(FIRMS_highConfidence$ACQ_DATE)
 FIRMS_Kruger_DrySeason <- subset(FIRMS_highConfidence,Month >= 7 & Month < 10)
 FIRMS_Kruger_WetSeason <- subset(FIRMS_highConfidence,Month < 7 | Month > 10)
 
-krugerBrick <- brick(krugerMAP_UTM,krugerAvgTmin_UTM,krugerFirelineIntensity_UTM,krugerWoodyCover_UTM)
+krugerBrick <- brick(krugerMAP_UTM,krugerAvgTmin_UTM,krugerFirelineIntensity_UTM,krugerWoodyCover_UTM,krugerOverlayRaster)
+
 
 DrySeasonMAP <- extract(krugerBrick,FIRMS_Kruger_DrySeason,method='bilinear',df=TRUE,sp=TRUE)
 WetSeasonMAP <- extract(krugerBrick,FIRMS_Kruger_WetSeason,method='bilinear',df=TRUE,sp=TRUE)
@@ -53,5 +62,10 @@ DrySeasonMAP$Season <- "Dry"
 WetSeasonMAP$Season <- "Wet"
 
 FRP_Variables <- rbind(DrySeasonMAP,WetSeasonMAP)
+names(FRP_Variables)[18] <- "Geology"
+FRP_Variables$Geology <- as.factor(FRP_Variables$Geology)
+levels(FRP_Variables$Geology)[1] <- "Granitic"
+levels(FRP_Variables$Geology)[9] <- "Basaltic"
+levels(FRP_Variables$Geology)[c(2,3,4,5,6,7,8)] <- "Other"
 
 FRP_Variables_subsetWC <- subset(FRP_Variables,WoodyCover >= 50)

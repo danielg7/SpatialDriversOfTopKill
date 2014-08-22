@@ -1,5 +1,15 @@
-Spatial Drivers of Fire Intensity
-========================================================
+# Spatial Drivers of Fire Intensity
+
+We don't know much about drives fire intensity across different scales. To address this, fire radiative power data were obtained from [FIRMS](https://earthdata.nasa.gov/data/near-real-time-data/firms) for the period 1 Jan 2004 to 1 Jan 2014.
+
+Data were subset to only include fire detections of > 95% confidence.
+
+Fire detections were then associated with
+* Mean annual precipitation
+* Geologic parent material
+* Woody cover
+
+**Methods**
 
 
 
@@ -7,42 +17,12 @@ Spatial Drivers of Fire Intensity
 
 
 
+**Figures**
 
+1. Fire Radiative Power by Mean Annual Precipitation
+![plot of chunk FRP_by_MAP_Season](./SpatialDrivers_Figures_files/figure-html/FRP_by_MAP_Season.png) 
+2. Fire Radiative Power by Percent Woody Cover and Season
+![plot of chunk FRP_by_WoodyCover](./SpatialDrivers_Figures_files/figure-html/FRP_by_WoodyCover.png) 
+3. Fire Radiative Power by Geology
 
-
-
-```r
-FIRMS_highConfidence <- subset(FIRMS, CONFIDENCE >= 95)
-
-FIRMS_highConfidence$ACQ_DATE <- ymd(as.character(FIRMS_highConfidence$ACQ_DATE))
-FIRMS_highConfidence$Month <- month(FIRMS_highConfidence$ACQ_DATE)
-FIRMS_Kruger_DrySeason <- subset(FIRMS_highConfidence, Month >= 7 & Month < 
-    10)
-FIRMS_Kruger_WetSeason <- subset(FIRMS_highConfidence, Month < 7 | Month > 10)
-
-krugerBrick <- brick(krugerMAP_UTM, krugerAvgTmin_UTM, krugerFirelineIntensity_UTM, 
-    krugerWoodyCover_UTM)
-
-DrySeasonMAP <- extract(krugerBrick, FIRMS_Kruger_DrySeason, method = "bilinear", 
-    df = TRUE, sp = TRUE)
-WetSeasonMAP <- extract(krugerBrick, FIRMS_Kruger_WetSeason, method = "bilinear", 
-    df = TRUE, sp = TRUE)
-
-DrySeasonMAP <- as.data.frame(DrySeasonMAP)
-WetSeasonMAP <- as.data.frame(WetSeasonMAP)
-
-DrySeasonMAP$Season <- "Dry"
-WetSeasonMAP$Season <- "Wet"
-
-FRP_Variables <- rbind(DrySeasonMAP, WetSeasonMAP)
-
-FRP_Variables_subsetWC <- subset(FRP_Variables, WoodyCover >= 50)
-```
-
-
-
-![plot of chunk fireSeasonMAP](figure/fireSeasonMAP.png) 
-
-
-![plot of chunk fireSeasonBucini](figure/fireSeasonBucini.png) 
-
+![plot of chunk FRP_by_GLY](./SpatialDrivers_Figures_files/figure-html/FRP_by_GLY.png) 

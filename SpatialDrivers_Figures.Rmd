@@ -1,10 +1,25 @@
-Spatial Drivers of Fire Intensity
-========================================================
+---
+title: "Spatial Drivers of Fire Intensity"
+output:
+  html_document:
+    keep_md: true
+---
 
+We don't know much about drives fire intensity across different scales. To address this, fire radiative power data were obtained from [FIRMS](https://earthdata.nasa.gov/data/near-real-time-data/firms) for the period 1 Jan 2004 to 1 Jan 2014.
+
+Data were subset to only include fire detections of > 95% confidence.
+
+Fire detections were then associated with
+* Mean annual precipitation
+* Geologic parent material
+* Woody cover
+
+**Methods**
 ```{r SetUp, echo=FALSE,warning=FALSE,message=FALSE}
+
+library(gridExtra)
 library(ggthemes)
 library(ggplot2)
-library(extrafont)
 
 setwd("/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Ignition Variation/SpatialDriversofTopKill")
 
@@ -12,41 +27,96 @@ setwd("/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Igni
 
 myTheme <- theme_tufte() +
   theme(
-    text = element_text(family="sans",size=18),
+    text = element_text(family="sans",size=12),
     axis.line = element_line(size = .3)
   )
 ```
 
-```{r ReadChunks,echo=FALSE, warning=FALSE,message=FALSE}
-read_chunk('Scripts/IntensityMap.R')
+```{r RunScript,echo=FALSE, warning=FALSE,message=FALSE,include=FALSE}
+source("Scripts/IntensityMap.R",echo=FALSE,verbose = FALSE)
 ```
 
 ```{r loadEverything_chunk, echo=FALSE,warning=FALSE,message=FALSE,include=FALSE}
 <<loadEverything>>
 ```
 
-```{r SubsetAndExtract_chunk,echo=TRUE,warning=FALSE,message=FALSE}
+```{r SubsetAndExtract_chunk,tidy=TRUE,echo=TRUE,warning=FALSE,message=FALSE}
 <<SubsetAndExtract>>
 ```
+**Figures**
 
-
-```{r fireSeasonMAP,echo=FALSE,warning=FALSE}
-fireSeasonMap <- ggplot(data=FRP_Variables,aes(x=MAP,y=FRP,color=Season))
-fireSeasonMap+
+1. Fire Radiative Power by Mean Annual Precipitation
+```{r FRP_by_MAP_Season,echo=FALSE,warning=FALSE,message=FALSE}
+fireSeasonMap <- ggplot(data=FRP_Variables,aes(x=MAP,y=FRP,color=Season))+
   myTheme+
+  ggtitle("A.")+
+     theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+         legend.position=c(.8,.9),legend.direction="vertical")+
+  ylab(expression(paste("Fire Radiative Power (MW ","km",{}^{-2},")")))+
+  xlab(expression(paste("Mean Annual Precipitation (mm ","yr",{}^{-1},")")))+
+  scale_color_colorblind()+
+  
+  geom_point(alpha=.75)
+
+fireGLYMap <- ggplot(data=FRP_Variables,aes(x=MAP,y=FRP,color=Geology))+
+  ggtitle("B.")+
+  myTheme+
+     theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+         legend.position=c(.8,.9),legend.direction="vertical")+
   ylab(expression(paste("Fire Radiative Power (MW ","km",{}^{-2},")")))+
   xlab(expression(paste("Mean Annual Precipitation (mm ","yr",{}^{-1},")")))+
   scale_color_colorblind()+
   geom_point(alpha=.75)
-```
 
-```{r fireSeasonBucini,echo=FALSE,warning=FALSE}
-fireSeasonWC <- ggplot(data=FRP_Variables,aes(x=WoodyCover,y=FRP,color=Season))
-fireSeasonWC+
+grid.arrange(fireSeasonMap,fireGLYMap,nrow=1)
+```
+2. Fire Radiative Power by Percent Woody Cover and Season
+```{r FRP_by_WoodyCover,echo=FALSE,warning=FALSE,message=FALSE}
+fireSeasonWC <- ggplot(data=FRP_Variables,aes(x=WoodyCover,y=FRP,color=Season))+
   myTheme+
+     theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+         legend.position=c(.8,.9),legend.direction="vertical")+
   ylab(expression(paste("Fire Radiative Power (MW ","km",{}^{-2},")")))+
   xlab("Woody Cover (%)")+
   xlim(0,100)+
+  ggtitle("A.")+
   scale_color_colorblind()+
   geom_point(alpha=.75)
+
+fireGLYWC <- ggplot(data=FRP_Variables,aes(x=WoodyCover,y=FRP,color=Geology))+
+  myTheme+
+     theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+         legend.position=c(.8,.9),legend.direction="vertical")+
+  ylab(expression(paste("Fire Radiative Power (MW ","km",{}^{-2},")")))+
+  xlab("Woody Cover (%)")+
+  xlim(0,100)+
+  ggtitle("B.")+
+  scale_color_colorblind()+
+  geom_point(alpha=.75)
+
+grid.arrange(fireSeasonWC,fireGLYWC,nrow=1)
+```
+3. Fire Radiative Power by Geology
+
+```{r FRP_by_GLY,echo=FALSE,warning=FALSE,message=FALSE}
+fireGly <- ggplot(data=FRP_Variables,aes(x=Geology,y=FRP))
+fireGly+
+  myTheme+
+  xlim("Granitic","Basaltic")+
+  ylab(expression(paste("Fire Radiative Power (MW ","km",{}^{-2},")")))+
+  xlab("Parent Material")+
+  scale_color_colorblind()+
+  geom_boxplot()
 ```
