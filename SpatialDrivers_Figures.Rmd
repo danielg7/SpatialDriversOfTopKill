@@ -87,7 +87,7 @@ knit_hooks$set(plot = function(x, options) {
          " ", addon_args,
          paste0(" style='", paste(style, collapse="; "), "'"),
          ">",
-         "<br><figcaption>", fig_number_txt, fig.cap, "</figcaption></figure>")
+         "<br><figcaption>", fig_number_txt, fig.cap, "</figcaption></figure><br>")
 })
 
 ```
@@ -121,7 +121,7 @@ myTheme <- theme_tufte() +
   )
 ```
 
-```{r RunScript,echo=TRUE, warning=FALSE,message=FALSE,include=FALSE}
+```{r RunScript,echo=FALSE, warning=FALSE,message=FALSE,include=TRUE,tidy=TRUE}
 source("Scripts/IntensityMap.R",echo=TRUE,verbose = FALSE)
 ```
 
