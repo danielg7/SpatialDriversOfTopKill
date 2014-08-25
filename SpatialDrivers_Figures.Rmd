@@ -87,7 +87,7 @@ knit_hooks$set(plot = function(x, options) {
          " ", addon_args,
          paste0(" style='", paste(style, collapse="; "), "'"),
          ">",
-         "<figcaption>", fig_number_txt, fig.cap, "</figcaption></figure>")
+         "<br><figcaption>", fig_number_txt, fig.cap, "</figcaption></figure>")
 })
 
 ```
@@ -215,9 +215,11 @@ fireSeason <- ggplot(data=FRP_Variables,aes(x=Season,y=FRP))+
 
 grid.arrange(fireGly,fireSeason,nrow=1)
 ```
-
-```{r kwTables,echo=FALSE,results='asis',tidy=TRUE}
+**Kruskal-Wallis Tests**
+```{r kwTables,echo=FALSE,results='markup',tidy=TRUE}
 kruskal.test(FRP ~ Geology,FRP_Variables)
 
 kruskal.test(FRP ~ as.factor(Season),FRP_Variables)
 ```
+
+No significant difference by seasonality, but there is a difference by geologic parent material.

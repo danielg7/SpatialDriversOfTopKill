@@ -22,20 +22,27 @@ Fire detections were then associated with:
 
 **Figures**
 
-<figure><img src='figuresFRP_by_MAP_Season.png'  style='display: block'><figcaption>Figure 1: Fire radiative power by mean annual precipitation, subdivided by (A.) season of burn and (B.) geologic parent material.</figcaption></figure>
+<figure><img src='figuresFRP_by_MAP_Season.png'  style='display: block'><br><figcaption>Figure 1: Fire radiative power by mean annual precipitation, subdivided by (A.) season of burn and (B.) geologic parent material.</figcaption></figure>
 
-<figure><img src='figuresFRP_by_WoodyCover.png'  style='display: block'><figcaption>Figure 2: Fire radiative power by percent woody cover, subdivided by (A.) season of burn and (B.) geologic parent material.</figcaption></figure>
+<figure><img src='figuresFRP_by_WoodyCover.png'  style='display: block'><br><figcaption>Figure 2: Fire radiative power by percent woody cover, subdivided by (A.) season of burn and (B.) geologic parent material.</figcaption></figure>
 
-<figure><img src='figuresFRP_by_GLY.png'  style='display: block'><figcaption>Figure 3: Fire radiative power by geology and season of burn.</figcaption></figure>
+<figure><img src='figuresFRP_by_GLY.png'  style='display: block'><br><figcaption>Figure 3: Fire radiative power by geology and season of burn.</figcaption></figure>
+**Kruskal-Wallis Tests**
 
+```
+## 
+## 	Kruskal-Wallis rank sum test
+## 
+## data:  FRP by Geology
+## Kruskal-Wallis chi-squared = 13.26, df = 2, p-value = 0.001321
+```
 
-	Kruskal-Wallis rank sum test
+```
+## 
+## 	Kruskal-Wallis rank sum test
+## 
+## data:  FRP by as.factor(Season)
+## Kruskal-Wallis chi-squared = 0.0077, df = 1, p-value = 0.9301
+```
 
-data:  FRP by Geology
-Kruskal-Wallis chi-squared = 13.26, df = 2, p-value = 0.001321
-
-
-	Kruskal-Wallis rank sum test
-
-data:  FRP by as.factor(Season)
-Kruskal-Wallis chi-squared = 0.0077, df = 1, p-value = 0.9301
+No significant difference by seasonality, but there is a difference by geologic parent material.
