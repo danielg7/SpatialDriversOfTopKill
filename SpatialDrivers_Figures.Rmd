@@ -3,7 +3,16 @@ title: "Spatial Drivers of Fire Intensity"
 output:
   html_document:
     keep_md: true
+    theme: journal
+    fig_caption: true
+    fig.path: 'figure/'
 ---
+```{r set_options, echo=FALSE, warning=FALSE,message=FALSE}
+require(knitr)
+opts_chunk$set( fig.path = 'figure_rmd/' )
+
+```
+
 
 We don't know much about what drives fire intensity across different scales. To address this, fire radiative power data were obtained from [FIRMS](https://earthdata.nasa.gov/data/near-real-time-data/firms) for the period 1 Jan 2004 to 1 Jan 2014.
 
