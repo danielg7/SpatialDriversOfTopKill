@@ -6,66 +6,45 @@ library(rgdal)
 library(lubridate)
 
 crs.k <- CRS("+proj=utm +zone=36 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
-crs.m <- CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 
-FIRMS <- readOGR(dsn="/Users/danielg7/Documents/FIRMS/",layer="firms138621406915198_MCD14ML")
-krugerOutline <- readOGR(dsn="/Users/danielg7/Documents/LandsatImagery/Boundary/",layer="boundary_kruger")
 krugerAvgTmin_UTM <- raster(x="/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Ignition Variation/SpatialDriversofTopKill/Data/krugerAvgTmin_UTM")
 krugerMAP_UTM <- raster(x="/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Ignition Variation/SpatialDriversofTopKill/Data/krugerMAP_UTM")
-krugerFirelineIntensity_UTM <- raster(x="/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Ignition Variation/SpatialDriversofTopKill/Data/krugerFireLineIntensity_UTM")
-krugerGly <- readOGR(dsn="Data/",layer="KNP_GraniticAndBasaltic")
 
-krugerWoodyCover <- raster(x="Data/WoodyCover/wcp_map_fin.tif")
+krugerFRI <- readOGR(dsn="Data/FRI/",layer = "fire return interval_1941to2006")
+krugerFRI_UTM <- spTransform(krugerFRI,crs.k)
+krugerFRI_UTM <- subset(krugerFRI_UTM,MFRI <= 6)
 
-krugerMAP_UTM <- resample(krugerMAP_UTM,krugerAvgTmin_UTM)
-krugerGly_UTM <- spTransform(krugerGly,crs.k)
-krugerFirelineIntensity_UTM <- resample(krugerFirelineIntensity_UTM,krugerAvgTmin_UTM)
+krugerFRIRaster <- raster(krugerMAP_UTM)
+
+krugerFRIRaster <- rasterize(krugerFRI_UTM,krugerFRIRaster,field=krugerFRI_UTM$MFRI)
+
+
+krugerBrick <- brick(krugerMAP_UTM,krugerFRIRaster)
+names(krugerBrick) <- c("MAP","MFRI")
+
+
+krugerFuelLoad <- 382.9 + 3.3 * krugerBrick$MAP + 979.4 * krugerBrick$MFRI - 0.001 * krugerBrick$MFRI^2 + 0.37*krugerBrick$MAP*krugerBrick$MFRI - 161.8*krugerBrick$MFRI^2
+
+RelativeHumidity <- 36.6 # Range values taken from Trollope 2002
+FuelMoisture <- 32.1 # Fuels assumed to take the value of RH immediately
+WindSpeed <- 2.6
+
+krugerFirelineIntensity <- 2729 + 0.8684*krugerFuelLoad - 530*sqrt(FuelMoisture) - 0.1907*RelativeHumidity^2 - 5961/WindSpeed
+
+#krugerWoodyCover <- raster(x="Data/WoodyCover/wcp_map_fin.tif")
+
+
 krugerWoodyCover_UTM <- projectRaster(krugerWoodyCover,krugerAvgTmin_UTM)
-krugerOverlayRaster <- raster(krugerWoodyCover_UTM)
-krugerGly_UTM <- spTransform(krugerGly,crs.k)
-
-krugerGlyRaster <- rasterize(krugerGly_UTM,krugerOverlayRaster)
-
-rm(krugerWoodyCover)
-
-names(krugerMAP_UTM) <- "MAP"
-names(krugerFirelineIntensity_UTM) <- "Fireline_Intensity"
 names(krugerWoodyCover_UTM) <- "WoodyCover"
 
-FIRMS <- spTransform(FIRMS,crs.k)
-krugerOutline <- spTransform(krugerOutline,crs.k)
+krugerWoodyCover_newExtent <- resample(krugerWoodyCover_UTM,krugerFirelineIntensity)
+krugerGlyRaster_newExtent <- resample(krugerGlyRaster,krugerFirelineIntensity)
 
+krugerIntensityInvestigation <- brick(krugerWoodyCover_newExtent,krugerFirelineIntensity,krugerGlyRaster_newExtent)
 
+krugerIntensityInvestigationDF <- na.omit(as.data.frame(krugerIntensityInvestigation))
+names(krugerIntensityInvestigationDF) <- c("WoodyCover","FirelineIntensity","Geology")
 
+krugerIntensityInvestigationDF$Geology <- as.factor(krugerIntensityInvestigationDF$Geology)
+levels(krugerIntensityInvestigationDF$Geology) <- c("Granitic","Basaltic")
 
-## @knitr SubsetAndExtract
-
-# Subset fire detections to just those of 95% confidence or more.
-FIRMS_highConfidence <- subset(FIRMS,CONFIDENCE >= 95)
-
-# Divide dates into wet and dry season.
-FIRMS_highConfidence$ACQ_DATE <- ymd(as.character(FIRMS_highConfidence$ACQ_DATE))
-FIRMS_highConfidence$Month <- month(FIRMS_highConfidence$ACQ_DATE)
-FIRMS_Kruger_DrySeason <- subset(FIRMS_highConfidence,Month >= 7 & Month < 10)
-FIRMS_Kruger_WetSeason <- subset(FIRMS_highConfidence,Month < 7 | Month > 10)
-
-krugerBrick <- brick(krugerMAP_UTM,krugerAvgTmin_UTM,krugerFirelineIntensity_UTM,krugerWoodyCover_UTM,krugerGlyRaster)
-
-
-DrySeasonMAP <- extract(krugerBrick,FIRMS_Kruger_DrySeason,method='bilinear',df=TRUE,sp=TRUE)
-WetSeasonMAP <- extract(krugerBrick,FIRMS_Kruger_WetSeason,method='bilinear',df=TRUE,sp=TRUE)
-
-DrySeasonMAP <- as.data.frame(DrySeasonMAP)
-WetSeasonMAP <- as.data.frame(WetSeasonMAP)
-
-DrySeasonMAP$Season <- "Dry"
-WetSeasonMAP$Season <- "Wet"
-
-FRP_Variables <- rbind(DrySeasonMAP,WetSeasonMAP)
-names(FRP_Variables)[18] <- "Geology"
-FRP_Variables$Geology <- as.factor(FRP_Variables$Geology)
-levels(FRP_Variables$Geology)[9] <- "Basaltic"
-levels(FRP_Variables$Geology)[1] <- "Granitic"
-levels(FRP_Variables$Geology)[c(2,3,4,5,6,7,8)] <- "Other"
-
-FRP_Variables_subsetWC <- subset(FRP_Variables,WoodyCover >= 50)

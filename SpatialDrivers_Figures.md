@@ -15,7 +15,12 @@ Fire detections were then associated with:
 
 **Methods**
 
+Run the analyses related to the fire radiative power detections.
 
+
+```r
+source("Scripts/FIRMS_Map.R", echo = TRUE, verbose = FALSE)
+```
 
 ```
 ## 
@@ -76,8 +81,6 @@ Fire detections were then associated with:
 ## > krugerGlyRaster <- rasterize(krugerGly_UTM, krugerOverlayRaster)
 ## Found 2 region(s) and 14 polygon(s)
 ## 
-## > rm(krugerWoodyCover)
-## 
 ## > names(krugerMAP_UTM) <- "MAP"
 ## 
 ## > names(krugerFirelineIntensity_UTM) <- "Fireline_Intensity"
@@ -134,17 +137,94 @@ Fire detections were then associated with:
 ## > FRP_Variables_subsetWC <- subset(FRP_Variables, WoodyCover >= 
 ## +     50)
 ```
+Run the model as it relates to predicting intensity.
 
+```r
+source("Scripts/IntensityMap.R", echo = TRUE, verbose = FALSE)
+```
 
-
+```
+## 
+## > library(ggplot2)
+## 
+## > library(raster)
+## 
+## > library(rgdal)
+## 
+## > library(lubridate)
+## 
+## > crs.k <- CRS("+proj=utm +zone=36 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+## 
+## > krugerAvgTmin_UTM <- raster(x = "/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Ignition Variation/SpatialDriversofTopKill/Dat ..." ... [TRUNCATED] 
+## 
+## > krugerMAP_UTM <- raster(x = "/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Ignition Variation/SpatialDriversofTopKill/Data/kr ..." ... [TRUNCATED] 
+## 
+## > krugerFRI <- readOGR(dsn = "Data/FRI/", layer = "fire return interval_1941to2006")
+## OGR data source with driver: ESRI Shapefile 
+## Source: "Data/FRI/", layer: "fire return interval_1941to2006"
+## with 34856 features and 4 fields
+## Feature type: wkbPolygon with 2 dimensions
+## 
+## > krugerFRI_UTM <- spTransform(krugerFRI, crs.k)
+## 
+## > krugerFRI_UTM <- subset(krugerFRI_UTM, MFRI <= 6)
+## 
+## > krugerFRIRaster <- raster(krugerMAP_UTM)
+## 
+## > krugerFRIRaster <- rasterize(krugerFRI_UTM, krugerFRIRaster, 
+## +     field = krugerFRI_UTM$MFRI)
+## Found 29349 region(s) and 29487 polygon(s)
+## 
+## > krugerBrick <- brick(krugerMAP_UTM, krugerFRIRaster)
+## 
+## > names(krugerBrick) <- c("MAP", "MFRI")
+## 
+## > krugerFuelLoad <- 382.9 + 3.3 * krugerBrick$MAP + 
+## +     979.4 * krugerBrick$MFRI - 0.001 * krugerBrick$MFRI^2 + 0.37 * 
+## +     krugerBrick$MAP * kru .... [TRUNCATED] 
+## 
+## > RelativeHumidity <- 36.6
+## 
+## > FuelMoisture <- 32.1
+## 
+## > WindSpeed <- 2.6
+## 
+## > krugerFirelineIntensity <- 2729 + 0.8684 * krugerFuelLoad - 
+## +     530 * sqrt(FuelMoisture) - 0.1907 * RelativeHumidity^2 - 
+## +     5961/WindSpeed
+## 
+## > krugerWoodyCover_UTM <- projectRaster(krugerWoodyCover, 
+## +     krugerAvgTmin_UTM)
+## 
+## > names(krugerWoodyCover_UTM) <- "WoodyCover"
+## 
+## > krugerWoodyCover_newExtent <- resample(krugerWoodyCover_UTM, 
+## +     krugerFirelineIntensity)
+## 
+## > krugerGlyRaster_newExtent <- resample(krugerGlyRaster, 
+## +     krugerFirelineIntensity)
+## 
+## > krugerIntensityInvestigation <- brick(krugerWoodyCover_newExtent, 
+## +     krugerFirelineIntensity, krugerGlyRaster_newExtent)
+## 
+## > krugerIntensityInvestigationDF <- na.omit(as.data.frame(krugerIntensityInvestigation))
+## 
+## > names(krugerIntensityInvestigationDF) <- c("WoodyCover", 
+## +     "FirelineIntensity", "Geology")
+## 
+## > krugerIntensityInvestigationDF$Geology <- as.factor(krugerIntensityInvestigationDF$Geology)
+## 
+## > levels(krugerIntensityInvestigationDF$Geology) <- c("Granitic", 
+## +     "Basaltic")
+```
 
 **Figures**
 
-<figure><img src='figuresFRP_by_MAP_Season.png'  style='display: block'><br><figcaption>Figure 1: Fire radiative power by mean annual precipitation, subdivided by (A.) season of burn and (B.) geologic parent material.</figcaption></figure><br>
+<figure><img src='figure_rmd/FRP_by_MAP_Season.png'  style='display: block'><br><figcaption>Figure 1: Fire radiative power by mean annual precipitation, subdivided by (A.) season of burn and (B.) geologic parent material.</figcaption></figure><br>
 
-<figure><img src='figuresFRP_by_WoodyCover.png'  style='display: block'><br><figcaption>Figure 2: Fire radiative power by percent woody cover, subdivided by (A.) season of burn and (B.) geologic parent material.</figcaption></figure><br>
+<figure><img src='figure_rmd/FRP_by_WoodyCover.png'  style='display: block'><br><figcaption>Figure 2: Fire radiative power by percent woody cover, subdivided by (A.) season of burn and (B.) geologic parent material.</figcaption></figure><br>
 
-<figure><img src='figuresFRP_by_GLY.png'  style='display: block'><br><figcaption>Figure 3: Fire radiative power by geology and season of burn.</figcaption></figure><br>
+<figure><img src='figure_rmd/FRP_by_GLY.png'  style='display: block'><br><figcaption>Figure 3: Fire radiative power by geology and season of burn.</figcaption></figure><br>
 **Kruskal-Wallis Tests**
 
 ```
@@ -164,6 +244,12 @@ Fire detections were then associated with:
 ```
 
 No significant difference by seasonality, but there is a difference by geologic parent material.
+
+
+
+<figure><img src='figure_rmd/ModeledFirelineIntensity.png'  style='display: block'><br><figcaption>Figure 4: Modeled fireline intensity across Kruger National Park</figcaption></figure><br>
+
+<figure><img src='figure_rmd/FLI_By_WoodyCover.png'  style='display: block'><br><figcaption>Figure 5: Modeled fireline intensity by percent woody cover and geologic parent material.</figcaption></figure><br>
 
 
 

@@ -5,14 +5,15 @@ output:
     keep_md: true
     theme: journal
     fig_caption: true
-    fig.path: 'figure/'
+    fig.path: 'figure_rmd/'
 ---
 
 
 ```{r set_options, echo=FALSE, warning=FALSE,message=FALSE}
 library(knitr)
+library(sp)
 
-opts_chunk$set( fig.path = 'figures', fig.height = 4, fig.width = 6 )
+opts_chunk$set( fig.path = 'figure_rmd/', fig.height = 4, fig.width = 6 )
 
 # Notify that you want to use the counter,
 # if you set the counter to 3 then it will use 
@@ -121,18 +122,16 @@ myTheme <- theme_tufte() +
     axis.line = element_line(size = .3)
   )
 ```
+Run the analyses related to the fire radiative power detections.
 
-```{r RunScript,echo=FALSE, warning=FALSE,message=FALSE,include=TRUE,tidy=TRUE}
+```{r RunScript,echo=TRUE, warning=FALSE,message=FALSE,include=TRUE,tidy=TRUE}
+source("Scripts/FIRMS_Map.R",echo=TRUE,verbose = FALSE)
+```
+Run the model as it relates to predicting intensity.
+```{r RunModel,echo=TRUE, warning=FALSE,message=FALSE,include=TRUE,tidy=TRUE}
 source("Scripts/IntensityMap.R",echo=TRUE,verbose = FALSE)
 ```
 
-```{r loadEverything_chunk, echo=FALSE,warning=FALSE,message=FALSE,include=FALSE}
-<<loadEverything>>
-```
-
-```{r SubsetAndExtract_chunk,tidy=TRUE,echo=TRUE,warning=FALSE,message=FALSE}
-<<SubsetAndExtract>>
-```
 **Figures**
 
 ```{r FRP_by_MAP_Season,echo=FALSE,warning=FALSE,message=FALSE,fig.cap="Fire radiative power by mean annual precipitation, subdivided by (A.) season of burn and (B.) geologic parent material."}
@@ -224,6 +223,25 @@ kruskal.test(FRP ~ as.factor(Season),FRP_Variables)
 ```
 
 No significant difference by seasonality, but there is a difference by geologic parent material.
+
+
+
+```{r ModeledFirelineIntensity,echo=FALSE,warning=FALSE,message=FALSE,fig.cap="Modeled fireline intensity across Kruger National Park"}
+spplot(krugerFirelineIntensity,col.regions=topo.colors(100),colorkey=list(title="Fireline Intensity"))
+```
+
+```{r FLI_By_WoodyCover,echo=FALSE,warning=FALSE,fig.cap="Modeled fireline intensity by percent woody cover and geologic parent material."}
+
+FLI_by_WC <- ggplot(data=krugerIntensityInvestigationDF,aes(y=FirelineIntensity,x=WoodyCover,color=Geology))+
+  myTheme+
+  scale_color_colorblind()+
+  xlim(0,100)+
+  xlab("Woody Cover (%)")+
+  ylab(expression(paste("Fireline Intensity (kJ ","s",{}^{-1},"m",{}^{-1},")")))+
+  geom_point(alpha=.45)
+
+FLI_by_WC
+```
 
 
 
