@@ -7,9 +7,88 @@ output:
     fig_caption: true
     fig.path: 'figure/'
 ---
+
 ```{r set_options, echo=FALSE, warning=FALSE,message=FALSE}
-require(knitr)
-opts_chunk$set( fig.path = 'figure_rmd/' )
+library(knitr)
+
+opts_chunk$set( fig.path = 'figures' )
+
+# Notify that you want to use the counter,
+# if you set the counter to 3 then it will use 
+# that as starting number. You can also use strings
+# if you for instance have a split figure with 
+# a "1a" and "1b" setup
+options(figure_counter = TRUE)
+ 
+# If you want roman letters then set: 
+# options(figure_counter_roman = TRUE)
+ 
+# Evaluate the figure caption after the chunk, 
+# sometimes you want to calculate stuff inside the
+# chunk that you want to include in the caption and
+# it is therefore useful to evaluate it afterwards.
+opts_knit$set(eval.after='fig.cap')
+ 
+# The actual hook
+knit_hooks$set(plot = function(x, options) {
+  fig_fn = paste0(opts_knit$get("base.url"), 
+                  paste(x, collapse = "."))
+ 
+  # Some stuff from the default definition
+  fig.cap <- knitr:::.img.cap(options)
+ 
+  # Style and additional options that should be included in the img tag
+  style=c("display: block",
+          sprintf("margin: %s;",
+                   switch(options$fig.align, 
+                          left = 'auto auto auto 0', 
+                          center = 'auto',
+                          right = 'auto 0 auto auto')))
+  # Certain arguments may not belong in style, 
+  # for instance the width and height are usually
+  # outside if the do not have a unit specified
+  addon_args = ""
+ 
+  # This is perhaps a little overly complicated prepared 
+  # with the loop but it allows for a more out.parameters if necessary
+  if (any(grepl("^out.(height|width)", names(options)))){
+      on <- names(options)[grep("^out.(height|width)", names(options))]
+      for(out_name in on){
+          dimName <- substr(out_name, 5, nchar(out_name))
+          if (grepl("[0-9]+(em|px|%|pt|pc|in|cm|mm)", out_name))
+              style=append(style, paste0(dimName, ": ", options[[out_name]]))
+          else if (length(options$out.width) > 0)
+              addon_args = paste0(addon_args, dimName, "='", options[[out_name]], "'")
+      }
+  }
+ 
+  # Add counter if wanted
+  fig_number_txt <- ""
+  cntr <- getOption("figure_counter", FALSE)
+  if (cntr != FALSE){
+    if (is.logical(cntr))
+      cntr <- 1
+    # The figure_counter_str allows for custom 
+    # figure text, you may for instance want it in
+    # bold: <b>Figure %s:</b>
+    # The %s is so that you have the option of setting the
+    # counter manually to 1a, 1b, etc if needed
+    fig_number_txt <- 
+      sprintf(getOption("figure_counter_str", "Figure %s: "), 
+              ifelse(getOption("figure_counter_roman", FALSE), 
+                     as.character(as.roman(cntr)), as.character(cntr)))
+ 
+    if (is.numeric(cntr))
+      options(figure_counter = cntr + 1)
+  }
+ 
+  # Put it all together
+  paste0("<figure><img src='", fig_fn, "'", 
+         " ", addon_args,
+         paste0(" style='", paste(style, collapse="; "), "'"),
+         ">",
+         "<figcaption>", fig_number_txt, fig.cap, "</figcaption></figure>")
+})
 
 ```
 
@@ -18,7 +97,7 @@ We don't know much about what drives fire intensity across different scales. To 
 
 Data were subset to only include fire detections of > 95% confidence.
 
-Fire detections were then associated with
+Fire detections were then associated with:
 * Mean annual precipitation
 * Geologic parent material
 * Woody cover
@@ -28,6 +107,7 @@ Fire detections were then associated with
 
 library(gridExtra)
 library(ggthemes)
+library(stargazer)
 library(ggplot2)
 
 setwd("/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Ignition Variation/SpatialDriversofTopKill")
@@ -41,8 +121,8 @@ myTheme <- theme_tufte() +
   )
 ```
 
-```{r RunScript,echo=FALSE, warning=FALSE,message=FALSE,include=FALSE}
-source("Scripts/IntensityMap.R",echo=FALSE,verbose = FALSE)
+```{r RunScript,echo=TRUE, warning=FALSE,message=FALSE,include=FALSE}
+source("Scripts/IntensityMap.R",echo=TRUE,verbose = FALSE)
 ```
 
 ```{r loadEverything_chunk, echo=FALSE,warning=FALSE,message=FALSE,include=FALSE}
@@ -54,8 +134,7 @@ source("Scripts/IntensityMap.R",echo=FALSE,verbose = FALSE)
 ```
 **Figures**
 
-1. Fire Radiative Power by Mean Annual Precipitation
-```{r FRP_by_MAP_Season,echo=FALSE,warning=FALSE,message=FALSE}
+```{r FRP_by_MAP_Season,echo=FALSE,warning=FALSE,message=FALSE,fig.cap="Fire radiative power by mean annual precipitation, subdivided by (A.) season of burn and (B.) geologic parent material."}
 fireSeasonMap <- ggplot(data=FRP_Variables,aes(x=MAP,y=FRP,color=Season))+
   myTheme+
   ggtitle("A.")+
@@ -85,8 +164,8 @@ fireGLYMap <- ggplot(data=FRP_Variables,aes(x=MAP,y=FRP,color=Geology))+
 
 grid.arrange(fireSeasonMap,fireGLYMap,nrow=1)
 ```
-2. Fire Radiative Power by Percent Woody Cover and Season
-```{r FRP_by_WoodyCover,echo=FALSE,warning=FALSE,message=FALSE}
+
+```{r FRP_by_WoodyCover,echo=FALSE,warning=FALSE,message=FALSE,fig.cap="Fire radiative power by percent woody cover, subdivided by (A.) season of burn and (B.) geologic parent material."}
 fireSeasonWC <- ggplot(data=FRP_Variables,aes(x=WoodyCover,y=FRP,color=Season))+
   myTheme+
      theme(plot.title = element_text(size=12,
@@ -117,15 +196,28 @@ fireGLYWC <- ggplot(data=FRP_Variables,aes(x=WoodyCover,y=FRP,color=Geology))+
 
 grid.arrange(fireSeasonWC,fireGLYWC,nrow=1)
 ```
-3. Fire Radiative Power by Geology
 
-```{r FRP_by_GLY,echo=FALSE,warning=FALSE,message=FALSE}
-fireGly <- ggplot(data=FRP_Variables,aes(x=Geology,y=FRP))
-fireGly+
+```{r FRP_by_GLY,echo=FALSE,warning=FALSE,message=FALSE,fig.cap="Fire radiative power by geology and season of burn."}
+fireGly <- ggplot(data=FRP_Variables,aes(x=Geology,y=FRP))+
   myTheme+
   xlim("Granitic","Basaltic")+
   ylab(expression(paste("Fire Radiative Power (MW ","km",{}^{-2},")")))+
   xlab("Parent Material")+
   scale_color_colorblind()+
   geom_boxplot()
+
+fireSeason <- ggplot(data=FRP_Variables,aes(x=Season,y=FRP))+
+  myTheme+
+  ylab(expression(paste("Fire Radiative Power (MW ","km",{}^{-2},")")))+
+  xlab("Parent Material")+
+  scale_color_colorblind()+
+  geom_boxplot()
+
+grid.arrange(fireGly,fireSeason,nrow=1)
+```
+
+```{r kwTables,echo=FALSE,results='asis',tidy=TRUE}
+kruskal.test(FRP ~ Geology,FRP_Variables)
+
+kruskal.test(FRP ~ as.factor(Season),FRP_Variables)
 ```
