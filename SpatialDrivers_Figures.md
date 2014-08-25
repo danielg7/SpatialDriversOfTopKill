@@ -3,6 +3,7 @@
 
 
 
+
 We don't know much about what drives fire intensity across different scales. To address this, fire radiative power data were obtained from [FIRMS](https://earthdata.nasa.gov/data/near-real-time-data/firms) for the period 1 Jan 2004 to 1 Jan 2014.
 
 Data were subset to only include fire detections of > 95% confidence.
@@ -21,8 +22,6 @@ Fire detections were then associated with:
 ## > library(ggplot2)
 ## 
 ## > library(raster)
-## 
-## > library(lattice)
 ## 
 ## > library(rgdal)
 ## 
@@ -165,3 +164,9 @@ Fire detections were then associated with:
 ```
 
 No significant difference by seasonality, but there is a difference by geologic parent material.
+
+
+
+![Creative Commons License](http://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png)
+
+[Analyses of Data on Spatial Drivers of Top Kill](http://github.com/danielg7/SpatialDriversOfTopKill/) by Daniel Godwin is licensed under a [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License](http://creativecommons.org/licenses/by-nc-nd/4.0/).

@@ -2,7 +2,6 @@
 
 library(ggplot2)
 library(raster)
-library(lattice)
 library(rgdal)
 library(lubridate)
 

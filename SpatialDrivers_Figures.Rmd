@@ -8,10 +8,11 @@ output:
     fig.path: 'figure/'
 ---
 
+
 ```{r set_options, echo=FALSE, warning=FALSE,message=FALSE}
 library(knitr)
 
-opts_chunk$set( fig.path = 'figures' )
+opts_chunk$set( fig.path = 'figures', fig.height = 4, fig.width = 6 )
 
 # Notify that you want to use the counter,
 # if you set the counter to 3 then it will use 
@@ -223,3 +224,9 @@ kruskal.test(FRP ~ as.factor(Season),FRP_Variables)
 ```
 
 No significant difference by seasonality, but there is a difference by geologic parent material.
+
+
+
+![Creative Commons License](http://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png)
+
+[Analyses of Data on Spatial Drivers of Top Kill](http://github.com/danielg7/SpatialDriversOfTopKill/) by Daniel Godwin is licensed under a [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License](http://creativecommons.org/licenses/by-nc-nd/4.0/).
