@@ -115,7 +115,7 @@ library(ggplot2)
 setwd("/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Ignition Variation/SpatialDriversofTopKill")
 
 
-
+library(ggthemes)
 myTheme <- theme_tufte() +
   theme(
     text = element_text(family="sans",size=12),
@@ -131,7 +131,10 @@ Run the model as it relates to predicting intensity.
 ```{r RunModel,echo=TRUE, warning=FALSE,message=FALSE,include=TRUE,tidy=TRUE}
 source("Scripts/IntensityMap.R",echo=TRUE,verbose = FALSE)
 ```
-
+Run the Fire Scar Analysis
+```{r RunAnalysis,echo=TRUE, warning=FALSE,message=FALSE,include=TRUE,tidy=TRUE}
+source("Scripts/FireScar_Analysis.R",echo=TRUE,verbose = FALSE)
+```
 **Figures**
 
 ```{r FRP_by_MAP_Season,echo=FALSE,warning=FALSE,message=FALSE,fig.cap="Fire radiative power by mean annual precipitation, subdivided by (A.) season of burn and (B.) geologic parent material."}
@@ -232,19 +235,192 @@ spplot(krugerFirelineIntensity,col.regions=topo.colors(100),colorkey=list(title=
 
 ```{r FLI_By_WoodyCover,echo=FALSE,warning=FALSE,fig.cap="Modeled fireline intensity by percent woody cover and geologic parent material."}
 
-FLI_by_WC <- ggplot(data=krugerIntensityInvestigationDF,aes(y=FirelineIntensity,x=WoodyCover,color=Geology))+
+FLI_by_WC <- ggplot(data=krugerIntensityInvestigationDF,aes(y=FirelineIntensity,x=WoodyCover,shape=Geology))+
   myTheme+
   scale_color_colorblind()+
+  scale_shape(solid=FALSE)+
   xlim(0,100)+
+  
   xlab("Woody Cover (%)")+
   ylab(expression(paste("Fireline Intensity (kJ ","s",{}^{-1},"m",{}^{-1},")")))+
-  geom_point(alpha=.45)
+  geom_point(size=1,alpha=.3)+
+  facet_wrap(~Geology)
 
 FLI_by_WC
 ```
 
+```{r FLI_By_MAP,echo=FALSE,warning=FALSE,fig.cap="Modeled fireline intensity by MAP and geologic parent material."}
+
+FLI_by_MAP <- ggplot(data=krugerIntensityInvestigationDF,aes(y=FirelineIntensity,x=MAP,shape=Geology))+
+  myTheme+
+  scale_color_colorblind()+
+  scale_shape(solid=FALSE)+
+   xlab(expression(paste("Mean Annual Precipitation (mm ","yr",{}^{-1},")")))+
+  ylab(expression(paste("Fireline Intensity (kJ ","s",{}^{-1},"m",{}^{-1},")")))+
+  geom_point(size=1,alpha=.3)+
+  facet_wrap(~Geology)
+
+FLI_by_MAP
+```
+
+**Intensity by Woody Cover and MAP: GLM Results**
+```{r,echo=FALSE,results='asis',warning=FALSE,message=FALSE}
+library(texreg)
+
+Null_GLM <- glm(FirelineIntensity ~ 1,data=krugerIntensityInvestigationDF)
+Intensity_WC_GLM <- glm(FirelineIntensity ~ WoodyCover,data = krugerIntensityInvestigationDF)
+Intensity_MAP_GLM <- glm(FirelineIntensity ~ MAP, data = krugerIntensityInvestigationDF)
 
 
+
+htmlreg(l=list(Null_GLM,Intensity_WC_GLM), doctype = F, html.tag = FALSE, inline.css = TRUE, 
+    head.tag = FALSE, body.tag = FALSE, center = FALSE, single.row = TRUE, caption = "") 
+
+htmlreg(l=list(Null_GLM,Intensity_MAP_GLM), doctype = F, html.tag = FALSE, inline.css = TRUE, 
+    head.tag = FALSE, body.tag = FALSE, center = FALSE, single.row = TRUE, caption = "") 
+
+
+```
+
+```{r FireScars_by_variables,echo=FALSE,warning=FALSE,fig.cap="Reported impacts of fire."}
+
+firescar_woodyTable <- ddply(.data=firescar_final,
+                             .(WOODYIMPAC,Season),
+                             summarize,
+                             Count = length(WOODYIMPAC))
+
+firescar_woodyTable <- ddply(.data=firescar_woodyTable,
+                             .(Season),
+                             transform,
+                             Percent = Count/sum(Count))
+
+firescar_herbTable <- ddply(.data=firescar_final,
+                             .(HERBACEOUS,Season),
+                             summarize,
+                             Count = length(HERBACEOUS))
+
+firescar_herbTable <- ddply(.data=firescar_herbTable,
+                             .(Season),
+                             transform,
+                             Percent = Count/sum(Count))
+
+
+FireSev_Hist <- ggplot(data=firescar_woodyTable,aes(x=WOODYIMPAC,y=Percent,fill=Season))+
+  myTheme+
+  ylab("Count")+
+     theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+         legend.position=c(.8,.9),legend.direction="vertical")+
+  ggtitle("A.")+
+  xlab("Impact on Woody Cover")+
+  ylim(0,1)+
+  geom_bar(position="dodge",stat="identity")
+
+FireHerb_Hist <- ggplot(data=firescar_herbTable,aes(x=HERBACEOUS,y=Percent,fill=Season))+
+  myTheme+
+  ylab("Count")+
+     theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+         legend.position=c(.8,.9),legend.direction="vertical")+
+  ggtitle("B.")+
+  ylim(0,1)+
+  xlab("Impact on Herbaceous Material")+
+  geom_bar(position="dodge",stat="identity")
+
+grid.arrange(FireSev_Hist,FireHerb_Hist,nrow=1)
+```
+
+```{r FireScars_by_MAP,echo=FALSE,warning=FALSE,fig.cap="Impact on woody cover and herbaceous material by mean annual precipitation (A,B). Relationship between percent woody cover and reported impact on woody cover and herbaceous material (C,D)."}
+
+FireSev_MAP <- ggplot(data=firescar_final,aes(y=MAP,x=WOODYIMPAC))+
+  myTheme+
+  coord_flip()+
+    ylab(expression(paste("Mean Annual Precipitation (mm ","yr",{}^{-1},")")))+
+      theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+         legend.position=c(.8,.9),legend.direction="vertical")+
+  ggtitle("A.")+
+  xlab("Impact on Woody Cover")+
+  geom_boxplot()
+
+FireHerb_MAP <- ggplot(data=firescar_final,aes(y=MAP,x=HERBACEOUS))+
+  myTheme+
+  coord_flip()+
+  xlab("Impact on Herbaceous Material")+
+     theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+         legend.position="none",legend.direction="vertical")+
+  ggtitle("B.")+
+  ylab(expression(paste("Mean Annual Precipitation (mm ","yr",{}^{-1},")")))+  
+  geom_boxplot()
+
+FireSev_WC <- ggplot(data=firescar_final,aes(y=WoodyCover,x=WOODYIMPAC))+
+  myTheme+
+  coord_flip()+
+    ylab("Woody Cover (%)")+
+      theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+         legend.position=c(.8,.9),legend.direction="vertical")+
+  ggtitle("C.")+
+  xlab("Impact on Woody Cover")+
+  geom_boxplot()
+
+FireHerb_WC <- ggplot(data=firescar_final,aes(y=WoodyCover,x=HERBACEOUS))+
+  myTheme+
+  coord_flip()+
+  xlab("Impact on Herbaceous Material")+
+     theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+         legend.position="none",legend.direction="vertical")+
+  ggtitle("D.")+
+  ylab("Woody Cover (%)")+  
+  geom_boxplot()
+
+grid.arrange(FireSev_MAP,FireHerb_MAP,FireSev_WC,FireHerb_WC,nrow=2)
+```
+
+```{r PreviousMAP,echo=FALSE,warning=FALSE,fig.cap="Role of previous two years of mean annual precipitation on reported impacts on woody species (A.) and herbaceous cover (B.)"}
+
+FireSev_PreMAP <- ggplot(data=firescar_final,aes(y=PreviousMAP,x=WOODYIMPAC))+
+  myTheme+
+  coord_flip()+
+    ylab("Sum of Previous Two Years of Rain (mm)")+
+      theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+         legend.position=c(.8,.9),legend.direction="vertical")+
+  ggtitle("A.")+
+  xlab("Impact on Woody Cover")+
+  geom_boxplot()
+
+FireHerb_PreMAP <- ggplot(data=firescar_final,aes(y=PreviousMAP,x=HERBACEOUS))+
+  myTheme+
+  coord_flip()+
+  xlab("Impact on Herbaceous Material")+
+     theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+         legend.position="none",legend.direction="vertical")+
+  ggtitle("B.")+
+  ylab("Sum of Previous Two Years of Rain (mm)")+
+  geom_boxplot()
+
+grid.arrange(FireSev_PreMAP,FireHerb_PreMAP,nrow=1)
+```
 ![Creative Commons License](http://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png)
 
 [Analyses of Data on Spatial Drivers of Top Kill](http://github.com/danielg7/SpatialDriversOfTopKill/) by Daniel Godwin is licensed under a [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License](http://creativecommons.org/licenses/by-nc-nd/4.0/).

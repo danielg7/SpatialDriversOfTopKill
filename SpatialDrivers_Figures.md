@@ -193,6 +193,8 @@ source("Scripts/IntensityMap.R", echo = TRUE, verbose = FALSE)
 ## +     530 * sqrt(FuelMoisture) - 0.1907 * RelativeHumidity^2 - 
 ## +     5961/WindSpeed
 ## 
+## > krugerWoodyCover <- raster(x = "Data/WoodyCover/wcp_map_fin.tif")
+## 
 ## > krugerWoodyCover_UTM <- projectRaster(krugerWoodyCover, 
 ## +     krugerAvgTmin_UTM)
 ## 
@@ -205,19 +207,144 @@ source("Scripts/IntensityMap.R", echo = TRUE, verbose = FALSE)
 ## +     krugerFirelineIntensity)
 ## 
 ## > krugerIntensityInvestigation <- brick(krugerWoodyCover_newExtent, 
-## +     krugerFirelineIntensity, krugerGlyRaster_newExtent)
+## +     krugerFirelineIntensity, krugerGlyRaster_newExtent, krugerMAP_UTM)
 ## 
 ## > krugerIntensityInvestigationDF <- na.omit(as.data.frame(krugerIntensityInvestigation))
 ## 
 ## > names(krugerIntensityInvestigationDF) <- c("WoodyCover", 
-## +     "FirelineIntensity", "Geology")
+## +     "FirelineIntensity", "Geology", "MAP")
 ## 
 ## > krugerIntensityInvestigationDF$Geology <- as.factor(krugerIntensityInvestigationDF$Geology)
 ## 
 ## > levels(krugerIntensityInvestigationDF$Geology) <- c("Granitic", 
 ## +     "Basaltic")
 ```
+Run the Fire Scar Analysis
 
+```r
+source("Scripts/FireScar_Analysis.R", echo = TRUE, verbose = FALSE)
+```
+
+```
+## 
+## > library(rgdal)
+## 
+## > library(maptools)
+## 
+## > library(lubridate)
+## 
+## > source("Scripts/WeatherProcessor.R")
+## 
+## > Aggregated_FireScars <- readOGR(dsn = "Data/BurnScars/", 
+## +     layer = "agg2")
+## OGR data source with driver: ESRI Shapefile 
+## Source: "Data/BurnScars/", layer: "agg2"
+## with 3533 features and 12 fields
+## Feature type: wkbPolygon with 2 dimensions
+## 
+## > crs.k <- CRS("+proj=utm +zone=36 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
+## 
+## > Aggregated_FireScars$STARTDATE <- ymd(as.character(Aggregated_FireScars$STARTDATE))
+## 
+## > Aggregated_FireScars$DATE_START <- ymd(as.character(Aggregated_FireScars$DATE_START))
+## 
+## > Aggregated_FireScars$DATE_END <- ymd(as.character(Aggregated_FireScars$DATE_END))
+## 
+## > Aggregated_FireScars <- spTransform(Aggregated_FireScars, 
+## +     crs.k)
+## 
+## > FireScars_WoodyImpact <- subset(Aggregated_FireScars, 
+## +     !is.na(WOODYIMPAC))
+## 
+## > krugerMAP_UTM <- raster(x = "/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Ignition Variation/SpatialDriversofTopKill/Data/kr ..." ... [TRUNCATED] 
+## 
+## > krugerWoodyCover <- raster(x = "Data/WoodyCover/wcp_map_fin.tif")
+## 
+## > krugerWoodyCover_UTM <- projectRaster(krugerWoodyCover, 
+## +     krugerMAP_UTM)
+## 
+## > names(krugerWoodyCover_UTM) <- "WoodyCover"
+## 
+## > krugerFireScarAnalysis_brick <- brick(krugerMAP_UTM, 
+## +     krugerWoodyCover_UTM)
+## 
+## > extractedFireScars <- extract(x = krugerFireScarAnalysis_brick, 
+## +     y = FireScars_WoodyImpact, fun = mean, sp = TRUE)
+## 
+## > extractedFireScars_df <- as.data.frame(extractedFireScars)
+## 
+## > extractedFireScarsAgg_df <- ddply(extractedFireScars_df, 
+## +     .(FIREID), transform, IGNITIONSE = IGNITIONSE, STARTDATE = STARTDATE, 
+## +     HERBACE .... [TRUNCATED] 
+## 
+## > extractedFireScarsAgg_df <- subset(extractedFireScarsAgg_df, 
+## +     !is.na(layer))
+## 
+## > extractedFireScarsAgg_df$layer <- NULL
+## 
+## > extractedFireScarsAgg_df <- extractedFireScarsAgg_df[!duplicated(extractedFireScarsAgg_df), 
+## +     ]
+## 
+## > extractedFireScars_wx_df <- merge(extractedFireScarsAgg_df, 
+## +     Kruger_Wx_Combined, by.x = "IGNITIONSE", by.y = "Station_Long")
+## 
+## > extractedFireScars_wx_df$Year <- year(as.Date(as.character(extractedFireScars_wx_df$Year), 
+## +     format = "%Y"))
+## 
+## > testPlied <- ddply(extractedFireScars_wx_df, .(FIREID), 
+## +     mutate, PreviousYears = year(STARTDATE) - 2)
+## 
+## > testPlied <- ddply(testPlied, .(FIREID), subset, Year > 
+## +     PreviousYears & Year <= year(STARTDATE))
+## 
+## > aggPlied <- ddply(testPlied, "FIREID", summarise, 
+## +     PreviousMAP = sum(AnnualPrecip))
+## 
+## > firescar_final <- merge(testPlied, aggPlied, by = "FIREID")
+## 
+## > firescar_final$WOODYIMPAC <- factor(firescar_final$WOODYIMPAC, 
+## +     levels(firescar_final$WOODYIMPAC)[c(2, 4, 1, 3, 5)])
+## 
+## > levels(firescar_final$HERBACEOUS) <- c("Clean", "Clean", 
+## +     "Moderately clean", "Patchy", "Very patchy")
+## 
+## > firescar_final$HERBACEOUS <- factor(firescar_final$HERBACEOUS, 
+## +     levels(firescar_final$HERBACEOUS)[c(2, 4, 1, 3, 5)])
+## 
+## > firescar_final_dry <- subset(firescar_final, month(STARTDATE) >= 
+## +     7 & month(STARTDATE) < 10)
+## 
+## > firescar_final_wet <- subset(firescar_final, month(STARTDATE) >= 
+## +     7 | month(STARTDATE) > 10)
+## 
+## > firescar_final_dry$Season <- "Dry"
+## 
+## > firescar_final_wet$Season <- "Wet"
+## 
+## > firescar_final <- rbind(firescar_final_dry, firescar_final_wet)
+## 
+## > firescar_final_wet$Season <- as.factor(firescar_final_wet$Season)
+## 
+## > rm(firescar_final_dry)
+## 
+## > rm(firescar_final_wet)
+## 
+## > rm(aggPlied)
+## 
+## > rm(testPlied)
+## 
+## > rm(extractedFireScars)
+## 
+## > rm(extractedFireScars_df)
+## 
+## > rm(extractedFireScars_wx_df)
+## 
+## > rm(FireScars_WoodyImpact)
+## 
+## > rm(FireScars_WoodyImpact_df)
+## 
+## > rm(krugerFireScarAnalysis_brick)
+```
 **Figures**
 
 <figure><img src='figure_rmd/FRP_by_MAP_Season.png'  style='display: block'><br><figcaption>Figure 1: Fire radiative power by mean annual precipitation, subdivided by (A.) season of burn and (B.) geologic parent material.</figcaption></figure><br>
@@ -251,8 +378,108 @@ No significant difference by seasonality, but there is a difference by geologic 
 
 <figure><img src='figure_rmd/FLI_By_WoodyCover.png'  style='display: block'><br><figcaption>Figure 5: Modeled fireline intensity by percent woody cover and geologic parent material.</figcaption></figure><br>
 
+<figure><img src='figure_rmd/FLI_By_MAP.png'  style='display: block'><br><figcaption>Figure 6: Modeled fireline intensity by MAP and geologic parent material.</figcaption></figure><br>
+
+**Intensity by Woody Cover and MAP: GLM Results**
+
+<table cellspacing="0" style="border: none;">
+  <tr>
+    <th style="text-align: left; border-top: 2px solid black; border-bottom: 1px solid black; padding-right: 12px;"></th>
+    <th style="text-align: left; border-top: 2px solid black; border-bottom: 1px solid black; padding-right: 12px;"><b>Model 1</b></th>
+    <th style="text-align: left; border-top: 2px solid black; border-bottom: 1px solid black; padding-right: 12px;"><b>Model 2</b></th>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;">(Intercept)</td>
+    <td style="padding-right: 12px; border: none;">902.88 (3.15)<sup style="vertical-align: 4px;">***</sup></td>
+    <td style="padding-right: 12px; border: none;">772.48 (7.49)<sup style="vertical-align: 4px;">***</sup></td>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;">WoodyCover</td>
+    <td style="padding-right: 12px; border: none;"></td>
+    <td style="padding-right: 12px; border: none;">4.16 (0.22)<sup style="vertical-align: 4px;">***</sup></td>
+  </tr>
+  <tr>
+    <td style="border-top: 1px solid black;">AIC</td>
+    <td style="border-top: 1px solid black;">217862.94</td>
+    <td style="border-top: 1px solid black;">217502.95</td>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;">BIC</td>
+    <td style="padding-right: 12px; border: none;">217878.14</td>
+    <td style="padding-right: 12px; border: none;">217525.76</td>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;">Log Likelihood</td>
+    <td style="padding-right: 12px; border: none;">-108929.47</td>
+    <td style="padding-right: 12px; border: none;">-108748.48</td>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;">Deviance</td>
+    <td style="padding-right: 12px; border: none;">2165327697.19</td>
+    <td style="padding-right: 12px; border: none;">2112968278.38</td>
+  </tr>
+  <tr>
+    <td style="border-bottom: 2px solid black;">Num. obs.</td>
+    <td style="border-bottom: 2px solid black;">14788</td>
+    <td style="border-bottom: 2px solid black;">14788</td>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;" colspan="3"><span style="font-size:0.8em"><sup style="vertical-align: 4px;">***</sup>p &lt; 0.001, <sup style="vertical-align: 4px;">**</sup>p &lt; 0.01, <sup style="vertical-align: 4px;">*</sup>p &lt; 0.05</span></td>
+  </tr>
+</table>
 
 
+<table cellspacing="0" style="border: none;">
+  <tr>
+    <th style="text-align: left; border-top: 2px solid black; border-bottom: 1px solid black; padding-right: 12px;"></th>
+    <th style="text-align: left; border-top: 2px solid black; border-bottom: 1px solid black; padding-right: 12px;"><b>Model 1</b></th>
+    <th style="text-align: left; border-top: 2px solid black; border-bottom: 1px solid black; padding-right: 12px;"><b>Model 2</b></th>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;">(Intercept)</td>
+    <td style="padding-right: 12px; border: none;">902.88 (3.15)<sup style="vertical-align: 4px;">***</sup></td>
+    <td style="padding-right: 12px; border: none;">-1427.79 (8.76)<sup style="vertical-align: 4px;">***</sup></td>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;">MAP</td>
+    <td style="padding-right: 12px; border: none;"></td>
+    <td style="padding-right: 12px; border: none;">4.10 (0.02)<sup style="vertical-align: 4px;">***</sup></td>
+  </tr>
+  <tr>
+    <td style="border-top: 1px solid black;">AIC</td>
+    <td style="border-top: 1px solid black;">217862.94</td>
+    <td style="border-top: 1px solid black;">191637.42</td>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;">BIC</td>
+    <td style="padding-right: 12px; border: none;">217878.14</td>
+    <td style="padding-right: 12px; border: none;">191660.23</td>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;">Log Likelihood</td>
+    <td style="padding-right: 12px; border: none;">-108929.47</td>
+    <td style="padding-right: 12px; border: none;">-95815.71</td>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;">Deviance</td>
+    <td style="padding-right: 12px; border: none;">2165327697.19</td>
+    <td style="padding-right: 12px; border: none;">367513431.41</td>
+  </tr>
+  <tr>
+    <td style="border-bottom: 2px solid black;">Num. obs.</td>
+    <td style="border-bottom: 2px solid black;">14788</td>
+    <td style="border-bottom: 2px solid black;">14788</td>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;" colspan="3"><span style="font-size:0.8em"><sup style="vertical-align: 4px;">***</sup>p &lt; 0.001, <sup style="vertical-align: 4px;">**</sup>p &lt; 0.01, <sup style="vertical-align: 4px;">*</sup>p &lt; 0.05</span></td>
+  </tr>
+</table>
+
+<figure><img src='figure_rmd/FireScars_by_variables.png'  style='display: block'><br><figcaption>Figure 7: Reported impacts of fire.</figcaption></figure><br>
+
+<figure><img src='figure_rmd/FireScars_by_MAP.png'  style='display: block'><br><figcaption>Figure 8: Impact on woody cover and herbaceous material by mean annual precipitation (A,B). Relationship between percent woody cover and reported impact on woody cover and herbaceous material (C,D).</figcaption></figure><br>
+
+<figure><img src='figure_rmd/PreviousMAP.png'  style='display: block'><br><figcaption>Figure 9: Role of previous two years of mean annual precipitation on reported impacts on woody species (A.) and herbaceous cover (B.)</figcaption></figure><br>
 ![Creative Commons License](http://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png)
 
 [Analyses of Data on Spatial Drivers of Top Kill](http://github.com/danielg7/SpatialDriversOfTopKill/) by Daniel Godwin is licensed under a [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License](http://creativecommons.org/licenses/by-nc-nd/4.0/).

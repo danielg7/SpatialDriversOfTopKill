@@ -31,7 +31,7 @@ WindSpeed <- 2.6
 
 krugerFirelineIntensity <- 2729 + 0.8684*krugerFuelLoad - 530*sqrt(FuelMoisture) - 0.1907*RelativeHumidity^2 - 5961/WindSpeed
 
-#krugerWoodyCover <- raster(x="Data/WoodyCover/wcp_map_fin.tif")
+krugerWoodyCover <- raster(x="Data/WoodyCover/wcp_map_fin.tif")
 
 
 krugerWoodyCover_UTM <- projectRaster(krugerWoodyCover,krugerAvgTmin_UTM)
@@ -40,11 +40,12 @@ names(krugerWoodyCover_UTM) <- "WoodyCover"
 krugerWoodyCover_newExtent <- resample(krugerWoodyCover_UTM,krugerFirelineIntensity)
 krugerGlyRaster_newExtent <- resample(krugerGlyRaster,krugerFirelineIntensity)
 
-krugerIntensityInvestigation <- brick(krugerWoodyCover_newExtent,krugerFirelineIntensity,krugerGlyRaster_newExtent)
+krugerIntensityInvestigation <- brick(krugerWoodyCover_newExtent,krugerFirelineIntensity,krugerGlyRaster_newExtent,krugerMAP_UTM)
 
 krugerIntensityInvestigationDF <- na.omit(as.data.frame(krugerIntensityInvestigation))
-names(krugerIntensityInvestigationDF) <- c("WoodyCover","FirelineIntensity","Geology")
+names(krugerIntensityInvestigationDF) <- c("WoodyCover","FirelineIntensity","Geology","MAP")
 
 krugerIntensityInvestigationDF$Geology <- as.factor(krugerIntensityInvestigationDF$Geology)
 levels(krugerIntensityInvestigationDF$Geology) <- c("Granitic","Basaltic")
+
 
