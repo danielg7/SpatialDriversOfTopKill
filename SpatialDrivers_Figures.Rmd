@@ -12,6 +12,7 @@ output:
 ```{r set_options, echo=FALSE, warning=FALSE,message=FALSE}
 library(knitr)
 library(sp)
+library(boot)
 
 opts_chunk$set( fig.path = 'figure_rmd/', fig.height = 4, fig.width = 6 )
 
@@ -118,7 +119,7 @@ setwd("/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Igni
 library(ggthemes)
 myTheme <- theme_tufte() +
   theme(
-    text = element_text(family="sans",size=12),
+    text = element_text(family="sans",size=10),
     axis.line = element_line(size = .3)
   )
 ```
@@ -135,7 +136,105 @@ Run the Fire Scar Analysis
 ```{r RunAnalysis,echo=TRUE, warning=FALSE,message=FALSE,include=TRUE,tidy=TRUE}
 source("Scripts/FireScar_Analysis.R",echo=TRUE,verbose = FALSE)
 ```
+Run the intensity model analysis
+```{r RunMap,echo=TRUE, warning=FALSE,message=FALSE,include=FALSE,tidy=TRUE}
+source("Scripts/MAP_WC.R",echo=TRUE,verbose = FALSE)
+```
+
 **Figures**
+
+```{r logicalFramework,echo=FALSE,warning=FALSE,message=FALSE,fig.cap=""}
+
+a_map_pwc <- ggplot()+
+  myTheme+
+  coord_cartesian()+
+  theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+        legend.position=c(.8,.9),legend.direction="vertical")+
+  ggtitle("A.")+
+  xlab("Mean Annual Precipitation")+
+  ylab("Woody Cover (%)")+
+  ylim(0,50)+
+  xlim(0,1000)+
+  #geom_point(data=krugerMAP_agg,aes(y = WoodyCover, x = MAP_cut), size=1,width=1)+
+  geom_pointrange(data=krugerMAP_agg,aes(y = WoodyCover,ymax = WoodyCover + WC_SE,ymin = WoodyCover - WC_SE, x = MAP_cut), size=.5)+
+  geom_abline(slope = coef(WCMap)[2], intercept = coef(WCMap)[1])
+
+b_map_fuel_accumulation <- ggplot()+
+  myTheme+
+  coord_cartesian()+
+  theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+        legend.position=c(.8,.9),legend.direction="vertical")+
+  ggtitle("B.")+
+  xlab("Mean Annual Precipitation")+
+  ylab(expression(paste("Fuel Load (kg ha",{}^{-1},")")))+
+  ylim(0,6000)+
+  xlim(0,1000)+
+  geom_abline(slope = 6000/1250, intercept = 0)
+
+c_intensity_fuel_accumulation <- ggplot()+
+  myTheme+
+  coord_cartesian()+
+  theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+        legend.position=c(.8,.9),legend.direction="vertical")+
+  ggtitle("C.")+
+  xlab(expression(paste("Fuel Load (kg ha",{}^{-1},")")))+
+  ylab("Fire Intensity")+
+  ylim(0,3000)+
+  xlim(0,6000)+
+ # geom_abline(slope = 16890 * .1 * .04 / 1000, intercept = 0,linetype="dashed")+
+  geom_abline(slope = 16890 * .1 * .38 / 1000, intercept = 0,linetype="solid")
+ # +geom_abline(slope = 16890 * .1 * 1.22 / 1000, intercept = 0,linetype="dashed")
+  
+
+d_map_intensity <- ggplot()+
+  myTheme+
+  coord_cartesian()+
+  theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+        legend.position=c(.8,.9),legend.direction="vertical")+
+  ggtitle("D.")+
+  xlab("Mean Annual Precipitation")+
+  ylab(expression(paste("Fire Intensity (kW ","m",{}^{-1},")")))+
+  ylim(0,3000)+
+  xlim(0,1000)+
+  geom_abline(slope = 4.13, intercept = -558.22)
+
+dummyDF <- data.frame(MAP = seq(0,1200,10))
+dummyDF$Intensity <- dummyDF$MAP * 4.13 - 558.22
+dummyDF$ProbTop <- inv.logit(-3.9 * log(2) + .05 * sqrt(dummyDF$Intensity) + .3 * 1)
+
+
+e_map_intensity <- ggplot()+
+  myTheme+
+  coord_cartesian()+
+  theme(plot.title = element_text(size=12,
+                                  hjust="0",
+                                  family = "Arial",
+                                  face="plain"),
+        legend.position=c(.8,.9),legend.direction="vertical")+
+  ggtitle("E.")+
+  xlab("Mean Annual Precipitation")+
+  ylab("Probability of Top Kill")+
+  ylim(0,1)+
+  xlim(0,1000)+
+  geom_line(data = dummyDF, aes(x = MAP, y = ProbTop))
+
+grid.arrange(a_map_pwc,b_map_fuel_accumulation,c_intensity_fuel_accumulation,d_map_intensity,e_map_intensity,nrow=3)
+  
+```
+A. Average woody cover by mean annual precipitation at 50 mm/yr intervals (points); line is significant at P < 0.01, R^2 = 0.5862. B. Relationship between fuel load accumulation (grass biomass) and mean annual precipitation, derived from Figure 1, Govender et al. 2006. C. Relationship between fireline intensity and fuel load given an average rate of spread of .04 m/s. D. Relationship between average fireline intensity and mean annual precipitation, from Figure 2, Govender et al. 2006. E. Probability of top kill as a function of fire intensity by mean annual precipitation, as a function of Higgins et al. 2011 and the relationship shown in D.
+
 
 ```{r FRP_by_MAP_Season,echo=FALSE,warning=FALSE,message=FALSE,fig.cap="Fire radiative power by mean annual precipitation, subdivided by (A.) season of burn and (B.) geologic parent material."}
 fireSeasonMap <- ggplot(data=FRP_Variables,aes(x=MAP,y=FRP,color=Season))+
@@ -264,7 +363,7 @@ FLI_by_MAP
 ```
 
 **Intensity by Woody Cover and MAP: GLM Results**
-```{r,echo=FALSE,results='asis',warning=FALSE,message=FALSE}
+```{r FLI_WoodyCover_GLM,echo=FALSE,results='asis',warning=FALSE,message=FALSE}
 library(texreg)
 
 Null_GLM <- glm(FirelineIntensity ~ 1,data=krugerIntensityInvestigationDF)
@@ -307,7 +406,7 @@ firescar_herbTable <- ddply(.data=firescar_herbTable,
 
 FireSev_Hist <- ggplot(data=firescar_woodyTable,aes(x=WOODYIMPAC,y=Percent,fill=Season))+
   myTheme+
-  ylab("Count")+
+  ylab("Percent")+
      theme(plot.title = element_text(size=12,
                                   hjust="0",
                                   family = "Arial",
@@ -320,7 +419,7 @@ FireSev_Hist <- ggplot(data=firescar_woodyTable,aes(x=WOODYIMPAC,y=Percent,fill=
 
 FireHerb_Hist <- ggplot(data=firescar_herbTable,aes(x=HERBACEOUS,y=Percent,fill=Season))+
   myTheme+
-  ylab("Count")+
+  ylab("Percent")+
      theme(plot.title = element_text(size=12,
                                   hjust="0",
                                   family = "Arial",
@@ -396,7 +495,7 @@ grid.arrange(FireSev_MAP,FireHerb_MAP,FireSev_WC,FireHerb_WC,nrow=2)
 FireSev_PreMAP <- ggplot(data=firescar_final,aes(y=PreviousMAP,x=WOODYIMPAC))+
   myTheme+
   coord_flip()+
-    ylab("Sum of Previous Two Years of Rain (mm)")+
+    ylab("Sum of Previous\nTwo Years of Rain (mm)")+
       theme(plot.title = element_text(size=12,
                                   hjust="0",
                                   family = "Arial",
@@ -416,7 +515,7 @@ FireHerb_PreMAP <- ggplot(data=firescar_final,aes(y=PreviousMAP,x=HERBACEOUS))+
                                   face="plain"),
          legend.position="none",legend.direction="vertical")+
   ggtitle("B.")+
-  ylab("Sum of Previous Two Years of Rain (mm)")+
+  ylab("Sum Previous\nTwo Years of Rain (mm)")+
   geom_boxplot()
 
 grid.arrange(FireSev_PreMAP,FireHerb_PreMAP,nrow=1)

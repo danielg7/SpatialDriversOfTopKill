@@ -1,5 +1,4 @@
 library(rgdal)
-library(maptools)
 library(lubridate)
 
 source("Scripts/WeatherProcessor.R")
@@ -58,22 +57,34 @@ testPlied <- ddply(testPlied,
                    Year > PreviousYears & Year <= year(STARTDATE)
                   )
 aggPlied <- ddply(testPlied,"FIREID",summarise,
-                   PreviousMAP = sum(AnnualPrecip))
+                   PreviousMAP = mean(AnnualPrecip))
 
-firescar_final <- merge(testPlied,aggPlied,by="FIREID")
+firescar_final <- merge(extractedFireScarsAgg_df,aggPlied,by="FIREID")
 
 firescar_final$WOODYIMPAC <- factor(firescar_final$WOODYIMPAC,levels(firescar_final$WOODYIMPAC)[c(2,4,1,3,5)])
 levels(firescar_final$HERBACEOUS) <- c("Clean","Clean","Moderately clean","Patchy","Very patchy")
-firescar_final$HERBACEOUS <- factor(firescar_final$HERBACEOUS,levels(firescar_final$HERBACEOUS)[c(2,4,1,3,5)])
+#firescar_final$HERBACEOUS <- factor(firescar_final$HERBACEOUS,levels(firescar_final$HERBACEOUS)[c(2,4,1,3,5)])
 
-firescar_final_dry <- subset(firescar_final,month(STARTDATE) >= 7 & month(STARTDATE) < 10)
+firescar_final_dry <- subset(firescar_final,month(STARTDATE) <= 7 & month(STARTDATE) < 10)
 firescar_final_wet <- subset(firescar_final,month(STARTDATE) >= 7 | month(STARTDATE) > 10)
 
 firescar_final_dry$Season <- "Dry"
 firescar_final_wet$Season <- "Wet"
 
 firescar_final <- rbind(firescar_final_dry,firescar_final_wet)
-firescar_final_wet$Season <- as.factor(firescar_final_wet$Season)
+firescar_final$Season <- as.factor(firescar_final$Season)
+
+
+
+firescar_final$WoodyImpactLevel <- firescar_final$WOODYIMPAC
+levels(firescar_final$WoodyImpactLevel) <- c(0,1,2,3,4)
+firescar_final$WoodyImpactLevel <- as.numeric(firescar_final$WoodyImpactLevel)
+
+Impact_null <- glm(WoodyImpactLevel ~ 1,data=firescar_final)
+Impact_season <- glm(WoodyImpactLevel ~ Season, data = firescar_final)
+Impact_MAP <- glm(WoodyImpactLevel ~ MAP, data = firescar_final)
+Impact_CAUSE <- glm(WoodyImpactLevel ~ CAUSE, data = firescar_final)
+Impact_WC <- glm(WoodyImpactLevel ~ WoodyCover, data = firescar_final)
 
 rm(firescar_final_dry)
 rm(firescar_final_wet)
@@ -83,5 +94,4 @@ rm(extractedFireScars)
 rm(extractedFireScars_df)
 rm(extractedFireScars_wx_df)
 rm(FireScars_WoodyImpact)
-rm(FireScars_WoodyImpact_df)
 rm(krugerFireScarAnalysis_brick)
