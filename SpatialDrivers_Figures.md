@@ -19,7 +19,7 @@ Run the analyses related to the fire radiative power detections.
 
 
 ```r
-source("Scripts/FIRMS_Map.R", echo = TRUE, verbose = FALSE)
+source("Scripts/FIRMS_Map.R",echo=TRUE,verbose = FALSE)
 ```
 
 ```
@@ -31,6 +31,8 @@ source("Scripts/FIRMS_Map.R", echo = TRUE, verbose = FALSE)
 ## > library(rgdal)
 ## 
 ## > library(lubridate)
+## 
+## > library(plyr)
 ## 
 ## > crs.k <- CRS("+proj=utm +zone=36 +datum=WGS84 +units=m +no_defs +ellps=WGS84 +towgs84=0,0,0")
 ## 
@@ -105,7 +107,9 @@ source("Scripts/FIRMS_Map.R", echo = TRUE, verbose = FALSE)
 ## +     Month < 7 | Month > 10)
 ## 
 ## > krugerBrick <- brick(krugerMAP_UTM, krugerAvgTmin_UTM, 
-## +     krugerFirelineIntensity_UTM, krugerWoodyCover_UTM, krugerGlyRaster)
+## +     krugerFirelineIntensity_UTM, krugerWoodyCover_UTM, krugerGlyRaster$layer)
+## 
+## > names(krugerBrick)[5] <- "Geology"
 ## 
 ## > DrySeasonMAP <- extract(krugerBrick, FIRMS_Kruger_DrySeason, 
 ## +     method = "bilinear", df = TRUE, sp = TRUE)
@@ -123,8 +127,6 @@ source("Scripts/FIRMS_Map.R", echo = TRUE, verbose = FALSE)
 ## 
 ## > FRP_Variables <- rbind(DrySeasonMAP, WetSeasonMAP)
 ## 
-## > names(FRP_Variables)[18] <- "Geology"
-## 
 ## > FRP_Variables$Geology <- as.factor(FRP_Variables$Geology)
 ## 
 ## > levels(FRP_Variables$Geology)[9] <- "Basaltic"
@@ -134,13 +136,22 @@ source("Scripts/FIRMS_Map.R", echo = TRUE, verbose = FALSE)
 ## > levels(FRP_Variables$Geology)[c(2, 3, 4, 5, 6, 7, 
 ## +     8)] <- "Other"
 ## 
-## > FRP_Variables_subsetWC <- subset(FRP_Variables, WoodyCover >= 
-## +     50)
+## > FRP_Variables$MAP_cut <- cut(FRP_Variables$MAP, breaks = seq(400, 
+## +     950, 50))
+## 
+## > levels(FRP_Variables$MAP_cut) <- seq(400, 950, 50)
+## 
+## > FRP_Variables$MAP_cut <- as.character(FRP_Variables$MAP_cut)
+## 
+## > FRP_Variables$MAP_cut <- as.numeric(FRP_Variables$MAP_cut)
+## 
+## > FRP_Variables_agg <- ddply(FRP_Variables, .(MAP_cut), 
+## +     summarize, WC = mean(WoodyCover, na.rm = TRUE), WC_SE = sd(WoodyCover)/sqrt(length(Wood .... [TRUNCATED]
 ```
 Run the model as it relates to predicting intensity.
 
 ```r
-source("Scripts/IntensityMap.R", echo = TRUE, verbose = FALSE)
+source("Scripts/IntensityMap.R",echo=TRUE,verbose = FALSE)
 ```
 
 ```
@@ -222,7 +233,7 @@ source("Scripts/IntensityMap.R", echo = TRUE, verbose = FALSE)
 Run the Fire Scar Analysis
 
 ```r
-source("Scripts/FireScar_Analysis.R", echo = TRUE, verbose = FALSE)
+source("Scripts/FireScar_Analysis.R",echo=TRUE,verbose = FALSE)
 ```
 
 ```
@@ -370,6 +381,8 @@ A. Average woody cover by mean annual precipitation at 50 mm/yr intervals (point
 <figure><img src='figure_rmd/FRP_by_WoodyCover.png'  style='display: block'><br><figcaption>Figure 5: Fire radiative power by percent woody cover, subdivided by (A.) season of burn and (B.) geologic parent material.</figcaption></figure><br>
 
 <figure><img src='figure_rmd/FRP_by_GLY.png'  style='display: block'><br><figcaption>Figure 6: Fire radiative power by geology and season of burn.</figcaption></figure><br>
+
+<figure><img src='figure_rmd/FRP_avg_by_MAP.png'  style='display: block'><br><figcaption>Figure 7: Fire radiative power, averaged by 50 mm / yr MAP</figcaption></figure><br>
 **Kruskal-Wallis Tests**
 
 ```
@@ -392,11 +405,13 @@ No significant difference by seasonality, but there is a difference by geologic 
 
 
 
-<figure><img src='figure_rmd/ModeledFirelineIntensity.png'  style='display: block'><br><figcaption>Figure 7: Modeled fireline intensity across Kruger National Park</figcaption></figure><br>
+<figure><img src='figure_rmd/ModeledFirelineIntensity.png'  style='display: block'><br><figcaption>Figure 8: Modeled fireline intensity across Kruger National Park</figcaption></figure><br>
 
-<figure><img src='figure_rmd/FLI_By_WoodyCover.png'  style='display: block'><br><figcaption>Figure 8: Modeled fireline intensity by percent woody cover and geologic parent material.</figcaption></figure><br>
+<figure><img src='figure_rmd/FLI_By_WoodyCover.png'  style='display: block'><br><figcaption>Figure 9: Modeled fireline intensity by percent woody cover and geologic parent material.</figcaption></figure><br>
 
-<figure><img src='figure_rmd/FLI_By_MAP.png'  style='display: block'><br><figcaption>Figure 9: Modeled fireline intensity by MAP and geologic parent material.</figcaption></figure><br>
+<figure><img src='figure_rmd/FLI_By_MAP.png'  style='display: block'><br><figcaption>Figure 10: Modeled fireline intensity by MAP and geologic parent material.</figcaption></figure><br>
+
+<figure><img src='figure_rmd/FLI_By_NavashniStandards.png'  style='display: block'><br><figcaption>Figure 11: Percentage of probable fires by fireline intensity classes, as defined by Govender et al. 2006</figcaption></figure><br>
 
 **Intensity by Woody Cover and MAP: GLM Results**
 
@@ -409,32 +424,32 @@ No significant difference by seasonality, but there is a difference by geologic 
   <tr>
     <td style="padding-right: 12px; border: none;">(Intercept)</td>
     <td style="padding-right: 12px; border: none;">902.88 (3.15)<sup style="vertical-align: 4px;">***</sup></td>
-    <td style="padding-right: 12px; border: none;">772.48 (7.49)<sup style="vertical-align: 4px;">***</sup></td>
+    <td style="padding-right: 12px; border: none;">902.69 (3.15)<sup style="vertical-align: 4px;">***</sup></td>
   </tr>
   <tr>
     <td style="padding-right: 12px; border: none;">WoodyCover</td>
     <td style="padding-right: 12px; border: none;"></td>
-    <td style="padding-right: 12px; border: none;">4.16 (0.22)<sup style="vertical-align: 4px;">***</sup></td>
+    <td style="padding-right: 12px; border: none;">0.00 (0.00)<sup style="vertical-align: 4px;">**</sup></td>
   </tr>
   <tr>
     <td style="border-top: 1px solid black;">AIC</td>
     <td style="border-top: 1px solid black;">217862.94</td>
-    <td style="border-top: 1px solid black;">217502.95</td>
+    <td style="border-top: 1px solid black;">217854.87</td>
   </tr>
   <tr>
     <td style="padding-right: 12px; border: none;">BIC</td>
     <td style="padding-right: 12px; border: none;">217878.14</td>
-    <td style="padding-right: 12px; border: none;">217525.76</td>
+    <td style="padding-right: 12px; border: none;">217877.68</td>
   </tr>
   <tr>
     <td style="padding-right: 12px; border: none;">Log Likelihood</td>
     <td style="padding-right: 12px; border: none;">-108929.47</td>
-    <td style="padding-right: 12px; border: none;">-108748.48</td>
+    <td style="padding-right: 12px; border: none;">-108924.44</td>
   </tr>
   <tr>
     <td style="padding-right: 12px; border: none;">Deviance</td>
     <td style="padding-right: 12px; border: none;">2165327697.19</td>
-    <td style="padding-right: 12px; border: none;">2112968278.38</td>
+    <td style="padding-right: 12px; border: none;">2163854972.63</td>
   </tr>
   <tr>
     <td style="border-bottom: 2px solid black;">Num. obs.</td>
@@ -445,7 +460,6 @@ No significant difference by seasonality, but there is a difference by geologic 
     <td style="padding-right: 12px; border: none;" colspan="3"><span style="font-size:0.8em"><sup style="vertical-align: 4px;">***</sup>p &lt; 0.001, <sup style="vertical-align: 4px;">**</sup>p &lt; 0.01, <sup style="vertical-align: 4px;">*</sup>p &lt; 0.05</span></td>
   </tr>
 </table>
-
 
 <table cellspacing="0" style="border: none;">
   <tr>
@@ -493,11 +507,11 @@ No significant difference by seasonality, but there is a difference by geologic 
   </tr>
 </table>
 
-<figure><img src='figure_rmd/FireScars_by_variables.png'  style='display: block'><br><figcaption>Figure 10: Reported impacts of fire.</figcaption></figure><br>
+<figure><img src='figure_rmd/FireScars_by_variables.png'  style='display: block'><br><figcaption>Figure 12: Reported impacts of fire.</figcaption></figure><br>
 
-<figure><img src='figure_rmd/FireScars_by_MAP.png'  style='display: block'><br><figcaption>Figure 11: Impact on woody cover and herbaceous material by mean annual precipitation (A,B). Relationship between percent woody cover and reported impact on woody cover and herbaceous material (C,D).</figcaption></figure><br>
+<figure><img src='figure_rmd/FireScars_by_MAP.png'  style='display: block'><br><figcaption>Figure 13: Impact on woody cover and herbaceous material by mean annual precipitation (A,B). Relationship between percent woody cover and reported impact on woody cover and herbaceous material (C,D).</figcaption></figure><br>
 
-<figure><img src='figure_rmd/PreviousMAP.png'  style='display: block'><br><figcaption>Figure 12: Role of previous two years of mean annual precipitation on reported impacts on woody species (A.) and herbaceous cover (B.)</figcaption></figure><br>
+<figure><img src='figure_rmd/PreviousMAP.png'  style='display: block'><br><figcaption>Figure 14: Role of previous two years of mean annual precipitation on reported impacts on woody species (A.) and herbaceous cover (B.)</figcaption></figure><br>
 ![Creative Commons License](http://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png)
 
 [Analyses of Data on Spatial Drivers of Top Kill](http://github.com/danielg7/SpatialDriversOfTopKill/) by Daniel Godwin is licensed under a [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License](http://creativecommons.org/licenses/by-nc-nd/4.0/).

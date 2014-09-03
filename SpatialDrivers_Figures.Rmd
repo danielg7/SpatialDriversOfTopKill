@@ -116,7 +116,6 @@ library(ggplot2)
 setwd("/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Ignition Variation/SpatialDriversofTopKill")
 
 
-library(ggthemes)
 myTheme <- theme_tufte() +
   theme(
     text = element_text(family="sans",size=10),
@@ -125,19 +124,19 @@ myTheme <- theme_tufte() +
 ```
 Run the analyses related to the fire radiative power detections.
 
-```{r RunScript,echo=TRUE, warning=FALSE,message=FALSE,include=TRUE,tidy=TRUE}
+```{r RunScript,echo=TRUE, warning=FALSE,message=FALSE,include=TRUE,tidy_source=TRUE}
 source("Scripts/FIRMS_Map.R",echo=TRUE,verbose = FALSE)
 ```
 Run the model as it relates to predicting intensity.
-```{r RunModel,echo=TRUE, warning=FALSE,message=FALSE,include=TRUE,tidy=TRUE}
+```{r RunModel,echo=TRUE, warning=FALSE,message=FALSE,include=TRUE,tidy_source=TRUE}
 source("Scripts/IntensityMap.R",echo=TRUE,verbose = FALSE)
 ```
 Run the Fire Scar Analysis
-```{r RunAnalysis,echo=TRUE, warning=FALSE,message=FALSE,include=TRUE,tidy=TRUE}
+```{r RunAnalysis,echo=TRUE, warning=FALSE,message=FALSE,include=TRUE,tidy_source=TRUE}
 source("Scripts/FireScar_Analysis.R",echo=TRUE,verbose = FALSE)
 ```
 Run the intensity model analysis
-```{r RunMap,echo=TRUE, warning=FALSE,message=FALSE,include=FALSE,tidy=TRUE}
+```{r RunMap,echo=TRUE, warning=FALSE,message=FALSE,include=FALSE,tidy_source=TRUE}
 source("Scripts/MAP_WC.R",echo=TRUE,verbose = FALSE)
 ```
 
@@ -317,6 +316,19 @@ fireSeason <- ggplot(data=FRP_Variables,aes(x=Season,y=FRP))+
 
 grid.arrange(fireGly,fireSeason,nrow=1)
 ```
+
+```{r FRP_avg_by_MAP,echo=FALSE,warning=FALSE,message=FALSE,fig.cap="Fire radiative power, averaged by 50 mm / yr MAP"}
+frp_MAP <- ggplot()+
+  myTheme+
+  ylab(expression(paste("Fire Radiative Power (MW ","km",{}^{-2},")")))+
+   xlab(expression(paste("Mean Annual Precipitation (mm ","yr",{}^{-1},")")))+
+  scale_color_colorblind()+
+  geom_pointrange(data = FRP_Variables_agg, aes(x = MAP_cut,
+                                                y = Intensity,
+                                                ymin = Intensity - Intensity_SE,
+                                                ymax = Intensity + Intensity_SE))
+frp_MAP
+```
 **Kruskal-Wallis Tests**
 ```{r kwTables,echo=FALSE,results='markup',tidy=TRUE}
 kruskal.test(FRP ~ Geology,FRP_Variables)
@@ -360,6 +372,25 @@ FLI_by_MAP <- ggplot(data=krugerIntensityInvestigationDF,aes(y=FirelineIntensity
   facet_wrap(~Geology)
 
 FLI_by_MAP
+```
+
+```{r FLI_By_NavashniStandards,echo=FALSE,warning=FALSE,fig.cap="Percentage of probable fires by fireline intensity classes, as defined by Govender et al. 2006"}
+krugerIntensityInvestigationDF$IntensityCut <- cut(krugerIntensityInvestigationDF$FirelineIntensity,breaks = c(-500,1000,2000,4000,6000,8000))
+levels(krugerIntensityInvestigationDF$IntensityCut) <- c("Very low (< 1000)","Low (1000 - 2000)","Moderate (2000 - 4000)","High (4000 - 6000)","Very Hight (> 6000)")
+
+krugerIntensityInvestigationDF_agg <- ddply(krugerIntensityInvestigationDF,.(IntensityCut),summarize,Count = length(FirelineIntensity))
+
+krugerIntensityInvestigationDF_agg$Percent <- krugerIntensityInvestigationDF_agg$Count / sum(krugerIntensityInvestigationDF_agg$Count)
+
+FLI_Hist <- ggplot(data=krugerIntensityInvestigationDF_agg,aes(x=IntensityCut,y=Percent*100))+
+  myTheme+
+  ylab("Percentage of Fires (%)")+
+ # scale_x_continuous(breaks=c(0,1000,2000,3000,4000,5000),labels=c(""))+
+  xlab(expression(paste("Fireline intensity classes (kJ ","s",{}^{-1},"m",{}^{-1},")")))+
+  geom_text(aes(label = Percent*100,y = Percent*100 + 5),parse=TRUE)+
+  geom_bar(stat="identity")
+
+FLI_Hist
 ```
 
 **Intensity by Woody Cover and MAP: GLM Results**

@@ -18,7 +18,6 @@ krugerFRIRaster <- raster(krugerMAP_UTM)
 
 krugerFRIRaster <- rasterize(krugerFRI_UTM,krugerFRIRaster,field=krugerFRI_UTM$MFRI)
 
-
 krugerBrick <- brick(krugerMAP_UTM,krugerFRIRaster)
 names(krugerBrick) <- c("MAP","MFRI")
 

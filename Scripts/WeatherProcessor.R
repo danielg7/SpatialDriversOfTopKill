@@ -1,4 +1,4 @@
-library(reshape)
+library(reshape2)
 library(plyr)
 library(ggplot2)
 library(lattice)
@@ -6,6 +6,7 @@ sitesWx <- read.csv("Data/Weather/Kruger_Stations1980_2008.csv")
 
 sitesWx_long <- melt(sitesWx,id.vars="Year",variable_name="Station")
 names(sitesWx_long)[3] <- "AnnualPrecip"
+names(sitesWx_long)[2] <- "Station"
 
 newWx <- read.csv("Data/Weather/monthly_rainfall_2006_2010_paf-moo-sat-pre.txt")
 newWx_annual <- ddply(newWx,.(YEAR,STATION),summarize,AnnualPrecip = sum(SumOfMM))
