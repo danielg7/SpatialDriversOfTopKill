@@ -104,34 +104,3 @@ rm(krugertmin)
 rm(krugertmin1)
 rm(krugertmin2)
 
-
-
-# 
-# 
-# MAP <- c(450,550,650,750,850)
-# MFRI <- c(5.0,5.3,5.2,3.5,3.5)
-# test <- data.frame(MAP,MFRI)
-# lm_MAP <- lm(MFRI~MAP,test)
-# 
-# krugerMAP$MAP <- krugerMAP$layer
-# 
-# krugerMFRIfromMAP <- predict(krugerMAP,lm_MAP)
-# 
-# landtypes_raster2 <- resample(x=landtypes_raster,y=krugerMAP)
-# krugerBrick <- brick(krugerMAP$MAP,landtypes_raster2,krugerMFRIfromMAP,krugerMeanRH)
-# names(krugerBrick) <- c("MAP","TrollopeMAP","MFRIfromMAP","RH")
-# 
-# krugerFuelLoad <- 382.9 + 3.3 * krugerBrick$MAP + 979.4 * krugerBrick$TrollopeMAP - 0.001 * krugerBrick$MAP^2 + 0.37*krugerBrick$MAP*krugerBrick$TrollopeMAP - 161.8*krugerBrick$TrollopeMAP^2
-
-#RelativeHumidity <- .25 # Range values taken from Trollope 2002
-#FuelMoisture <- .06 # Fuels assumed to take the value of RH immediately
-#WindSpeed <- 5
-
-#krugerFirelineIntensity <- 2729 + 0.8684*krugerFuelLoad - 530*sqrt(FuelMoisture) - 0.1907*krugerBrick$RH^2 - 5961/WindSpeed
-
-#krugerIntensityLog <- log(krugerFirelineIntensity)
-
-#krugerTopKillProb <- 4.14e-05 * krugerIntensity + 4.43e-01
-
-#krugerTopKillProb <- exp(4.3 - 5.003*log(2) + 0.004408*sqrt(krugerFirelineIntensity)) / (1 + exp(4.3 - 5.003*log(2) + 0.004408*sqrt(krugerFirelineIntensity)))
-

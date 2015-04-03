@@ -27,3 +27,12 @@ rm(newWx_annual)
 rm(newWx_annual_subset)
 rm(sitesWx)
 rm(sitesWx_long)
+
+
+for(i in unique(Kruger_Wx_Combined$Station)){
+  k <- subset(Kruger_Wx_Combined,Station == i)
+  print(i)
+  k <- na.omit(k)
+  print(mean(k$AnnualPrecip))
+  print(sd(k$AnnualPrecip))
+}

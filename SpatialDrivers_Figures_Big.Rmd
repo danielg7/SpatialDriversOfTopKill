@@ -14,7 +14,7 @@ library(knitr)
 library(sp)
 library(boot)
 
-opts_chunk$set( fig.path = 'figure_rmd/', fig.height = 4, fig.width = 6 )
+opts_chunk$set( fig.path = 'figure_rmd/', fig.height = 8, fig.width = 12 )
 
 # Notify that you want to use the counter,
 # if you set the counter to 3 then it will use 
@@ -116,19 +116,30 @@ library(ggplot2)
 
 setwd("/Users/danielgodwin/Dropbox/Graduate School/Dissertation/Chapter 2 - Ignition Variation/SpatialDriversofTopKill")
 
-
+textSize = 14
 myTheme <- theme_tufte() +
   theme(
-    text = element_text(family="sans",size=10),
+    text = element_text(size=textSize,family="sans"),
     axis.line = element_line(size = .3)
   )
 ```
+Run the analyses related to the fire radiative power detections.
+
+```{r RunScript,echo=TRUE, warning=FALSE,message=FALSE,include=TRUE,tidy_source=TRUE}
+source("Scripts/FIRMS_Map.R",echo=FALSE,verbose = FALSE)
+```
 Run the model as it relates to predicting intensity.
 ```{r RunModel,echo=TRUE, warning=FALSE,message=FALSE,include=TRUE,tidy_source=TRUE}
-source("Scripts/IntensityMap.R",echo=TRUE,verbose = FALSE)
-
+source("Scripts/IntensityMap.R",echo=FALSE,verbose = FALSE)
 ```
-
+Run the Fire Scar Analysis
+```{r RunAnalysis,echo=TRUE, warning=FALSE,message=FALSE,include=TRUE,tidy_source=TRUE}
+source("Scripts/FireScar_Analysis.R",echo=FALSE,verbose = FALSE)
+```
+Run the intensity model analysis
+```{r RunMap,echo=TRUE, warning=FALSE,message=FALSE,include=FALSE,tidy_source=TRUE}
+source("Scripts/MAP_WC.R",echo=FALSE,verbose = FALSE)
+```
 
 **Figures**
 
@@ -367,9 +378,8 @@ names(probTop)[1] <- "High"
 levelplot(probTop,
           labels=FALSE,
           contour=TRUE,
-          main = list("",cex = 2),
           col.regions = terrain.colors,
-          colorkey = list(col =  terrain.colors, axis.text = list(cex = 2)),
+          colorkey = list(col =  terrain.colors),
           pretty=TRUE,
           margin=FALSE)+
   spplot(krugerOutline,
@@ -380,48 +390,30 @@ levelplot(probTop,
 
 ```{r FLI_By_WoodyCover,echo=FALSE,warning=FALSE,fig.cap="Modeled average fireline intensity by percent woody cover and geologic parent material."}
 
-FLI_by_WC <- ggplot(data=krugerIntensityInvestigationDF,aes(y=FirelineIntensity_Average,x=WoodyCover
-                                                            #shape=Geology,
-                                                            #color = Geology
-                                                            ))+
+FLI_by_WC <- ggplot(data=krugerIntensityInvestigationDF,aes(y=FirelineIntensity_Average,x=WoodyCover,shape=Geology))+
   myTheme+
-  coord_flip()+
-  theme(text = element_text(size = 32))+
   scale_color_colorblind()+
   scale_shape(solid=FALSE)+
   xlim(0,100)+
   
   xlab("Woody Cover (%)")+
   ylab(expression(paste("Fireline Intensity (kJ ","s",{}^{-1},"m",{}^{-1},")")))+
-  geom_point(size=4,alpha=.2)
- # facet_wrap(~Geology)
+  geom_point(size=1,alpha=.3)+
+  facet_wrap(~Geology)
 
 FLI_by_WC
 ```
 
 ```{r FLI_By_MAP,echo=FALSE,warning=FALSE,fig.cap="Modeled fireline intensity by MAP and geologic parent material."}
 
-cutAvg <- krugerIntensityInvestigationDF
-
-cutAvg$MAP_breaks <- cut(x = krugerIntensityInvestigationDF$MAP,breaks = seq(from = 350, to = 725,by = 5))
-
-levels(cutAvg$MAP_breaks) <- seq(from = 355, to = 725,by = 5)
-
-cutAvg_byMAP <- ddply(cutAvg,.(MAP_breaks),summarize,FI = mean(FirelineIntensity_Average), FI_sd = sd(FirelineIntensity_Average)/sqrt(length(FirelienIntensity_Average)))
-
-cutAvg_byMAP$MAP_breaks <- as.numeric(as.character(cutAvg_byMAP$MAP_breaks))
-
-FLI_by_MAP <- ggplot(data=cutAvg_byMAP,aes(y=FI,x=MAP_breaks))+
+FLI_by_MAP <- ggplot(data=krugerIntensityInvestigationDF,aes(y=FirelineIntensity_Average,x=MAP,shape=Geology))+
   myTheme+
-  theme(text = element_text(size = 25))+
-  #scale_shape(solid=FALSE)+
+  scale_color_colorblind()+
+  scale_shape(solid=FALSE)+
    xlab(expression(paste("Mean Annual Precipitation (mm ","yr",{}^{-1},")")))+
   ylab(expression(paste("Fireline Intensity (kJ ","s",{}^{-1},"m",{}^{-1},")")))+
-  geom_line(size=2,alpha=1)+
-  geom_line(data = cutAvg_byMAP, linetype="dashed", aes(y = (FI-FI_sd), x = MAP_breaks))+
-  geom_line(data = cutAvg_byMAP, linetype="dashed", aes(y = (FI+FI_sd), x = MAP_breaks))
-
-
+  geom_point(size=1,alpha=.3)+
+  facet_wrap(~Geology)
 
 FLI_by_MAP
 ```
@@ -463,8 +455,8 @@ FLI_Hist
 ```
 
 
-```{r AvgProbTop_by_MAP,echo=FALSE,warning=FALSE,fig.cap="Probability of Top Kill by Mean Annual Precipitation, modeled."}
-krugerIntensityInvestigationDF$MAP_cut <- cut(krugerIntensityInvestigationDF$MAP,breaks=seq(from = 355, to = 725,by = 5))
+```{r FLI_By_AvgProbTop,echo=FALSE,warning=FALSE,fig.cap="Probability of Top Kill by Mean Annual Precipitation, modeled."}
+krugerIntensityInvestigationDF$MAP_cut <- cut(krugerIntensityInvestigationDF$MAP,breaks=seq(400,950,50))
 
 krugerProbTop_High <- ddply(krugerIntensityInvestigationDF,
                        .(MAP_cut),
@@ -478,11 +470,11 @@ krugerProbTop_Average <- ddply(krugerIntensityInvestigationDF,
                        Intensity = mean(FirelineIntensity_Average),
                        Intensity_SE = sd(FirelineIntensity_Average)/sqrt(length(FirelineIntensity_Average)))
 
-levels(krugerProbTop_Average$MAP_cut) <- seq(from = 355, to = 725,by = 5)
+levels(krugerProbTop_Average$MAP_cut) <- seq(400,950,50)
 krugerProbTop_Average$MAP_cut <- as.character(krugerProbTop_Average$MAP_cut)
 krugerProbTop_Average$MAP_cut <- as.numeric(krugerProbTop_Average$MAP_cut)
 
-levels(krugerProbTop_High$MAP_cut) <- seq(from = 355, to = 725,by = 5)
+levels(krugerProbTop_High$MAP_cut) <- seq(400,950,50)
 krugerProbTop_High$MAP_cut <- as.character(krugerProbTop_High$MAP_cut)
 krugerProbTop_High$MAP_cut <- as.numeric(krugerProbTop_High$MAP_cut)
 
@@ -495,36 +487,34 @@ krugerProbTop_Average$ProbTop_SE <- inv.logit(-3.9 * log(2) + .05 * sqrt(krugerP
 probTop_high <- ggplot()+
   myTheme+
   coord_cartesian()+
-  theme(plot.title = element_text(size=25,
+  theme(plot.title = element_text(size=12,
                                   hjust="0",
                                   family = "Arial",
                                   face="plain"),
         legend.position=c(.8,.9),legend.direction="vertical")+
-  ggtitle("A. High Fire Intensity")+
-  theme(text = element_text(size = 25))+
+  ggtitle("A.")+
   xlab("Mean Annual Precipitation")+
   ylab("Probability of Top Kill (1 m sapling)")+
   ylim(0,1)+
   xlim(0,1000)+
-  geom_line(data = krugerProbTop_High, size = 2, aes(x = MAP_cut, y = ProbTop))+
+  geom_line(data = krugerProbTop_High, aes(x = MAP_cut, y = ProbTop))+
   geom_line(data = krugerProbTop_High, linetype="dashed",aes(x = MAP_cut, y = ProbTop + ProbTop_SE))+
   geom_line(data = krugerProbTop_High, linetype="dashed",aes(x = MAP_cut, y = ProbTop - ProbTop_SE))
 
 probTop_average <- ggplot()+
   myTheme+
   coord_cartesian()+
-  theme(text = element_text(size = 25))+
-  theme(plot.title = element_text(size=25,
+  theme(plot.title = element_text(size=12,
                                   hjust="0",
                                   family = "Arial",
                                   face="plain"),
         legend.position=c(.8,.9),legend.direction="vertical")+
-  ggtitle("B. Average Fire Intensity")+
+  ggtitle("B.")+
   xlab("Mean Annual Precipitation")+
   ylab("Probability of Top Kill (1 m sapling)")+
   ylim(0,1)+
   xlim(0,1000)+
-  geom_line(data = krugerProbTop_Average, size = 2, aes(x = MAP_cut, y = ProbTop))+
+  geom_line(data = krugerProbTop_Average, aes(x = MAP_cut, y = ProbTop))+
   geom_line(data = krugerProbTop_Average, linetype="dashed",aes(x = MAP_cut, y = ProbTop + ProbTop_SE))+
   geom_line(data = krugerProbTop_Average, linetype="dashed",aes(x = MAP_cut, y = ProbTop - ProbTop_SE))
 
@@ -613,7 +603,6 @@ grid.arrange(FireSev_Hist,FireHerb_Hist,nrow=1)
 
 ```{r FireScars_by_MAP,echo=FALSE,warning=FALSE,fig.cap="Impact on woody cover and herbaceous material by mean annual precipitation (A,B). Relationship between percent woody cover and reported impact on woody cover and herbaceous material (C,D)."}
 
-textSize = 12
 
 FireSev_MAP <- ggplot(data=firescar_final,aes(y=MAP,x=WOODYIMPAC))+
   myTheme+

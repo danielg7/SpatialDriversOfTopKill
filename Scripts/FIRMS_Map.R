@@ -51,8 +51,8 @@ FIRMS_Kruger_WetSeason <- subset(FIRMS_highConfidence,Month < 7 | Month > 10)
 krugerBrick <- brick(krugerMAP_UTM,krugerAvgTmin_UTM,krugerFirelineIntensity_UTM,krugerWoodyCover_UTM,krugerGlyRaster$layer)
 names(krugerBrick)[5] <- "Geology"
 
-DrySeasonMAP <- extract(krugerBrick,FIRMS_Kruger_DrySeason,method='bilinear',df=TRUE,sp=TRUE)
-WetSeasonMAP <- extract(krugerBrick,FIRMS_Kruger_WetSeason,method='bilinear',df=TRUE,sp=TRUE)
+DrySeasonMAP <- raster::extract(krugerBrick,FIRMS_Kruger_DrySeason,method='bilinear',df=TRUE,sp=TRUE)
+WetSeasonMAP <- raster::extract(krugerBrick,FIRMS_Kruger_WetSeason,method='bilinear',df=TRUE,sp=TRUE)
 
 DrySeasonMAP <- as.data.frame(DrySeasonMAP)
 WetSeasonMAP <- as.data.frame(WetSeasonMAP)

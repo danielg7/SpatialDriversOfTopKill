@@ -75,7 +75,7 @@ d_map_intensity <- ggplot()+
   xlim(0,1000)+
   geom_abline(slope = 4.13, intercept = -558.22)
 
-dummyDF <- data.frame(MAP = seq(0,1200,10))
+dummyDF <- data.frame(MAP = seq(0,5000,10))
 dummyDF$Intensity <- dummyDF$MAP * 4.13 - 558.22
 dummyDF$ProbTop <- inv.logit(-3.9 * log(2) + .05 * sqrt(dummyDF$Intensity) + .3 * 1)
 

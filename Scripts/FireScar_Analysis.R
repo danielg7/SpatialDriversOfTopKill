@@ -22,12 +22,15 @@ names(krugerWoodyCover_UTM) <- "WoodyCover"
 krugerFireScarAnalysis_brick <- brick(krugerMAP_UTM,krugerWoodyCover_UTM)
 
 
-extractedFireScars <- extract(x = krugerFireScarAnalysis_brick,
+
+extractedFireScars <- raster::extract(x = krugerFireScarAnalysis_brick,
                               y = FireScars_WoodyImpact,
                               fun = mean,
                               sp = TRUE)
 
 extractedFireScars_df <- as.data.frame(extractedFireScars)
+
+extractedFireScars_df <- subset(extractedFireScars_df,WoodyCover >= 0)
 
 extractedFireScarsAgg_df <- ddply(extractedFireScars_df,.(FIREID),transform,
                                   IGNITIONSE = IGNITIONSE,
@@ -37,6 +40,7 @@ extractedFireScarsAgg_df <- ddply(extractedFireScars_df,.(FIREID),transform,
                                   AREA_HA = sum(AREA_HA),
                                   MAP = mean(layer,na.rm = TRUE),
                                   WoodyCover = mean(WoodyCover,na.rm = TRUE))
+
 extractedFireScarsAgg_df <-subset(extractedFireScarsAgg_df, !is.na(layer))
 extractedFireScarsAgg_df$layer <- NULL
 extractedFireScarsAgg_df <- extractedFireScarsAgg_df[!duplicated(extractedFireScarsAgg_df),]
@@ -60,6 +64,8 @@ aggPlied <- ddply(testPlied,"FIREID",summarise,
                    PreviousMAP = mean(AnnualPrecip))
 
 firescar_final <- merge(extractedFireScarsAgg_df,aggPlied,by="FIREID")
+firescar_final$Year <- year(as.Date(as.character(firescar_final$STARTDATE),format="%Y"))
+
 
 firescar_final$WOODYIMPAC <- factor(firescar_final$WOODYIMPAC,levels(firescar_final$WOODYIMPAC)[c(2,4,1,3,5)])
 levels(firescar_final$HERBACEOUS) <- c("Clean","Clean","Moderately clean","Patchy","Very patchy")
@@ -88,10 +94,52 @@ Impact_WC <- glm(WoodyImpactLevel ~ WoodyCover, data = firescar_final)
 
 rm(firescar_final_dry)
 rm(firescar_final_wet)
-rm(aggPlied)
-rm(testPlied)
+(aggPlied)
+(testPlied)
 rm(extractedFireScars)
 rm(extractedFireScars_df)
-rm(extractedFireScars_wx_df)
+(extractedFireScars_wx_df)
 rm(FireScars_WoodyImpact)
 rm(krugerFireScarAnalysis_brick)
+
+
+library(ggplot2)
+library(ggthemes)
+
+myTheme_big <- theme_tufte() +
+  theme(
+    text = element_text(family="sans",size=17),
+    axis.line = element_line(size = .3)
+  )
+
+tileTable <- ddply(.data=firescar_final,
+                            .(HERBACEOUS,WOODYIMPAC,CAUSE),
+                            summarize,
+                   Area = sum(AREA_HA),
+                            Count = length(WOODYIMPAC))
+
+tileTable$CountPercent = tileTable$Count/sum(tileTable$Count)
+tileTable$AreaPercent = tileTable$Area/sum(tileTable$Area)
+
+Tile <- ggplot(aes(x=HERBACEOUS,y=WOODYIMPAC,fill=AreaPercent),data=tileTable)
+  Tile+
+  scale_fill_continuous("Percent",high = "red",low="darkblue")+
+  ylab("Impact on Woody Cover")+
+  xlab("\nImpact on Herbaceous Material")+
+  geom_tile()+
+  myTheme_big
+
+TileCause <- ggplot(aes(x=CAUSE,y=WOODYIMPAC,fill=AreaPercent),data=tileTable)
+TileCause+
+  scale_fill_continuous("Percent",high = "darkred",low="darkblue")+
+  ylab("Impact on Woody Cover")+
+  xlab("\nCause")+
+  geom_tile()+
+  myTheme_big
+
+
+yearTable <- ddply(.data=firescar_final,
+                   .(HERBACEOUS,WOODYIMPAC,Year),
+                   summarize,
+                   WoodyCount = length(WOODYIMPAC),
+                   HerbCount = length(HERBACEOUS))
