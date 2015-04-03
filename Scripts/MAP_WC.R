@@ -3,6 +3,7 @@
 library(ggplot2)
 library(raster)
 library(lattice)
+library(plyr)
 library(rgdal)
 library(lubridate)
 library(boot)
@@ -41,8 +42,9 @@ krugerFRI_df$MAP_cut <- cut(krugerFRI_df$MAP,breaks=seq(400,950,50))
 levels(krugerFRI_df$MAP_cut) <- seq(400,950,50)
 krugerFRI_df$MAP_cut <- as.character(krugerFRI_df$MAP_cut)
 krugerFRI_df$MAP_cut <- as.numeric(krugerFRI_df$MAP_cut)
+krugerFRI_df <- subset(krugerFRI_df,WoodyCover >= 0)
 krugerMAP_agg <- ddply(krugerFRI_df,.(MAP_cut),summarize,
-                       WC = mean(WoodyCover,na.rm=TRUE),
+                       WC = mean(WoodyCover,na.rm=FALSE),
                        WC_SE = sd(WoodyCover)/sqrt(length(WoodyCover)))
 names(krugerMAP_agg)[2] <- "WoodyCover"
 

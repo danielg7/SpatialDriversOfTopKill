@@ -511,6 +511,53 @@ No significant difference by seasonality, but there is a difference by geologic 
 
 <figure><img src='figure_rmd/FireScars_by_MAP.png'  style='display: block'><br><figcaption>Figure 13: Impact on woody cover and herbaceous material by mean annual precipitation (A,B). Relationship between percent woody cover and reported impact on woody cover and herbaceous material (C,D).</figcaption></figure><br>
 
+
+<table cellspacing="0" style="border: none;">
+  <tr>
+    <th style="text-align: left; border-top: 2px solid black; border-bottom: 1px solid black; padding-right: 12px;"></th>
+    <th style="text-align: left; border-top: 2px solid black; border-bottom: 1px solid black; padding-right: 12px;"><b>Model 1</b></th>
+    <th style="text-align: left; border-top: 2px solid black; border-bottom: 1px solid black; padding-right: 12px;"><b>Model 2</b></th>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;">(Intercept)</td>
+    <td style="padding-right: 12px; border: none;">3.05 (0.11)<sup style="vertical-align: 4px;">***</sup></td>
+    <td style="padding-right: 12px; border: none;">3.97 (0.29)<sup style="vertical-align: 4px;">***</sup></td>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;">WoodyCover</td>
+    <td style="padding-right: 12px; border: none;"></td>
+    <td style="padding-right: 12px; border: none;">-0.03 (0.01)<sup style="vertical-align: 4px;">**</sup></td>
+  </tr>
+  <tr>
+    <td style="border-top: 1px solid black;">AIC</td>
+    <td style="border-top: 1px solid black;">198.98</td>
+    <td style="border-top: 1px solid black;">189.90</td>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;">BIC</td>
+    <td style="padding-right: 12px; border: none;">203.56</td>
+    <td style="padding-right: 12px; border: none;">196.77</td>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;">Log Likelihood</td>
+    <td style="padding-right: 12px; border: none;">-97.49</td>
+    <td style="padding-right: 12px; border: none;">-91.95</td>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;">Deviance</td>
+    <td style="padding-right: 12px; border: none;">61.78</td>
+    <td style="padding-right: 12px; border: none;">53.08</td>
+  </tr>
+  <tr>
+    <td style="border-bottom: 2px solid black;">Num. obs.</td>
+    <td style="border-bottom: 2px solid black;">73</td>
+    <td style="border-bottom: 2px solid black;">73</td>
+  </tr>
+  <tr>
+    <td style="padding-right: 12px; border: none;" colspan="3"><span style="font-size:0.8em"><sup style="vertical-align: 4px;">***</sup>p &lt; 0.001, <sup style="vertical-align: 4px;">**</sup>p &lt; 0.01, <sup style="vertical-align: 4px;">*</sup>p &lt; 0.05</span></td>
+  </tr>
+</table>
+
 <figure><img src='figure_rmd/PreviousMAP.png'  style='display: block'><br><figcaption>Figure 14: Role of previous two years of mean annual precipitation on reported impacts on woody species (A.) and herbaceous cover (B.)</figcaption></figure><br>
 ![Creative Commons License](http://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png)
 

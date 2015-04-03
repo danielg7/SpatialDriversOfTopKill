@@ -413,7 +413,7 @@ htmlreg(l=list(Null_GLM,Intensity_MAP_GLM), doctype = F, html.tag = FALSE, inlin
 ```
 
 ```{r FireScars_by_variables,echo=FALSE,warning=FALSE,fig.cap="Reported impacts of fire."}
-
+firescar_final <- subset(firescar_final,WoodyCover >= 0)
 firescar_woodyTable <- ddply(.data=firescar_final,
                              .(WOODYIMPAC,Season),
                              summarize,
@@ -519,6 +519,14 @@ FireHerb_WC <- ggplot(data=firescar_final,aes(y=WoodyCover,x=HERBACEOUS))+
   geom_boxplot()
 
 grid.arrange(FireSev_MAP,FireHerb_MAP,FireSev_WC,FireHerb_WC,nrow=2)
+```
+
+```{r FireSeverityModel,echo=FALSE,include=TRUE,results='asis',warning=FALSE,message=FALSE}
+NullWI <- glm(WoodyImpactLevel ~ 1,data=firescar_final)
+WC_glm <- glm(WoodyImpactLevel~WoodyCover,data=firescar_final)
+
+htmlreg(l=list(NullWI,WC_glm), doctype = F, html.tag = FALSE, inline.css = TRUE, 
+    head.tag = FALSE, body.tag = FALSE, center = FALSE, single.row = TRUE, caption = "") 
 ```
 
 ```{r PreviousMAP,echo=FALSE,warning=FALSE,fig.cap="Role of previous two years of mean annual precipitation on reported impacts on woody species (A.) and herbaceous cover (B.)"}
